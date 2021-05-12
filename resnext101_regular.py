@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from . import resnext_101_32x4d
+import resnext_101_32x4d
 import torch._utils
 
 resnext_101_32_path = "C:/Users/Jim Kok/Desktop/resnext_101_32x4d.pth"
