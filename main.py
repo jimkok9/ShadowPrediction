@@ -1,7 +1,9 @@
-from .resnext101_regular import ResNeXt101
-import cv2
+from resnext101_regular import *
+from PIL import Image
+
 
 if __name__ == "__main__":
-    EF = ResNeXt101()
-    img = cv2.imread("UCF/InputImages/006.jpg")
-    EF1 = EF.layer0()
+    EF = resnext101_regular.ResNeXt101()
+    img = Image.open("UCF/InputImages/006.jpg")
+    print(img)
+
