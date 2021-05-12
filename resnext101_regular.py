@@ -2,8 +2,9 @@ import torch
 from torch import nn
 
 from . import resnext_101_32x4d_
-from .config import resnext_101_32_path
 import torch._utils
+
+resnext_101_32_path = 
 
 
 class ResNeXt101(nn.Module):
