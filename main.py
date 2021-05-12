@@ -1,6 +1,6 @@
 import sys, os
 from PIL import Image
-from resnext101_regular import ResNeXt101
+from resnext101_EF import ResNeXt101
 from torchvision.transforms import ToTensor
 
 
@@ -10,6 +10,10 @@ if __name__ == "__main__":
     print(img.shape)
 
     ResNext = ResNeXt101()
-    EF5 = ResNext.forward(img)
-    print(EF5.shape)
+    EF = ResNext.forward(img)
+    print(EF[0].shape)
+    print(EF[1].shape)
+    print(EF[2].shape)
+    print(EF[3].shape)
+    print(EF[4].shape)
 
