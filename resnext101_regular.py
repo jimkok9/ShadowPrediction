@@ -1,16 +1,15 @@
 import torch
 from torch import nn
 
-from . import resnext_101_32x4d_
+from . import resnext_101_32x4d
 import torch._utils
 
-resnext_101_32_path = 
-
+resnext_101_32_path = "C:/Users/Jim Kok/Desktop/resnext_101_32x4d.pth"
 
 class ResNeXt101(nn.Module):
     def __init__(self, pretained=True):
         super(ResNeXt101, self).__init__()
-        net = resnext_101_32x4d_.get_resnext_101_32x4d()
+        net = resnext_101_32x4d.get_resnext_101_32x4d()
         if pretained:
             net.load_state_dict(torch.load(resnext_101_32_path))
         net = list(net.children())
