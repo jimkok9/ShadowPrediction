@@ -114,16 +114,11 @@ if __name__ == "__main__":
     EF = convertResNext.forward(ResNextFeatures)
 
     merge1_layers = MergeLayer1(config['merge1'])
-    up_edge, edge_feature, up_sal, sal_feature, up_subitizing = merge1_layers(EF, len(EF))
-
-    print(EF[0].shape)
+    up_edge, edge_feature, up_sal, sal_feature, up_subitizing = merge1_layers(EF, [257, 257])
     print(up_edge[0].shape)
-    print(edge_feature[0].shape)
-    print(up_sal[0].shape)
-    print(sal_feature[0].shape)
-    print(up_subitizing[0].shape)
 
-    plt.imshow(edge_feature[0].reshape(129, 129, 32).shape)
+    plt.imshow(up_edge[0].reshape(257, 257, 1).detach().numpy())
+    plt.show()
 
 
 
