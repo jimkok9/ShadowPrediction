@@ -23,7 +23,7 @@ config_resnext101 = {'convert': [[64, 256, 512, 1024, 2048], [32, 64, 64, 64, 64
                      'merge1': [[32, 0, 32, 3, 1], [64, 0, 64, 3, 1], [64, 0, 64, 5, 2], [64, 0, 64, 5, 2], [64, 0, 64, 7, 3]], 'merge2': [[32], [64, 64, 64, 64]]}
 
 
-class ConvertLayer(nn.Module):
+class ConvertLayer(nn.Module): #[[64, 256, 512, 1024, 2048], [32, 64, 64, 64, 64]]
     def __init__(self, list_k):
         super(ConvertLayer, self).__init__()
         up0, up1, up2 = [], [], []

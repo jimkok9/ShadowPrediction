@@ -5,8 +5,9 @@ from torchvision.transforms import ToTensor
 from torch import nn
 import torch
 import matplotlib.pyplot as plt
+import numpy as np
 
-class ConvertLayer(nn.Module):
+class ConvertLayer(nn.Module): # list_k: [[64, 256, 512, 1024, 2048], [32, 64, 64, 64, 64]]
     def __init__(self, list_k):
         super(ConvertLayer, self).__init__()
         up0, up1, up2 = [], [], []
@@ -98,8 +99,63 @@ class MergeLayer1(nn.Module): # list_k: [[32, 0, 32, 3, 1], [64, 0, 64, 3, 1], [
         edge_feature.append(tmp)
 
         up_edge.append(F.interpolate(self.edge_score(tmp), x_size, mode='bilinear', align_corners=True))
-        return up_edge, edge_feature, up_sal, sal_feature, up_subitizing
+        return up_edge, edge_feature, up_sal, sal_feature , up_subitizing
+               # Pred , DF1         , DF2345, Pred        ,           ,
 
+class MergeLayer2(nn.Module): # list_k [[32], [64, 64, 64, 64]]
+    def __init__(self, list_k):
+        super(MergeLayer2, self).__init__()
+        self.list_k = list_k
+        trans, up, score = [], [], []
+        for i in list_k[0]:
+            tmp = []
+            tmp_up = []
+            tmp_score = []
+            feature_k = [[3, 1], [5, 2], [5, 2], [7, 3]]
+            for idx, j in enumerate(list_k[1]):
+                tmp.append(nn.Sequential(nn.Conv2d(j, i, 1, 1, bias=False), nn.BatchNorm2d(i), nn.ReLU(inplace=True)))
+                tmp_up.append(
+                    nn.Sequential(nn.Conv2d(i, i, feature_k[idx][0], 1, feature_k[idx][1]), nn.BatchNorm2d(i), nn.ReLU(inplace=True),
+                                  nn.Conv2d(i, i, feature_k[idx][0], 1, feature_k[idx][1]), nn.BatchNorm2d(i), nn.ReLU(inplace=True),
+                                  nn.Conv2d(i, i, feature_k[idx][0], 1, feature_k[idx][1]), nn.BatchNorm2d(i), nn.ReLU(inplace=True)))
+            trans.append(nn.ModuleList(tmp))
+            up.append(nn.ModuleList(tmp_up))
+        # self.sub_score = nn.Conv2d(list_k[0][0], 1, 3, 1, 1)
+        self.sub_score = nn.Sequential(
+            nn.Conv2d(list_k[0][0], list_k[0][0]//4, 3, 1, 1), nn.BatchNorm2d(list_k[0][0]//4), nn.ReLU(inplace=True),
+            nn.Dropout(0.1), nn.Conv2d(list_k[0][0]//4, 1, 1)
+        )
+
+        self.trans, self.up = nn.ModuleList(trans), nn.ModuleList(up)
+        # self.final_score = nn.Sequential(nn.Conv2d(list_k[0][0], list_k[0][0], 5, 1, 2), nn.ReLU(inplace=True),
+        #                                  nn.Conv2d(list_k[0][0], 1, 3, 1, 1))
+        # self.final_score = nn.Sequential(
+        #     nn.Conv2d(list_k[0][0], list_k[0][0], 5, 1, 2), nn.BatchNorm2d(list_k[0][0]), nn.ReLU(inplace=True),
+        #     nn.Conv2d(list_k[0][0], list_k[0][0]//4, 3, 1, 1), nn.BatchNorm2d(list_k[0][0]//4), nn.ReLU(inplace=True),
+        #     nn.Dropout(0.1), nn.Conv2d(list_k[0][0]//4, 1, 1)
+        # )
+        self.relu = nn.ReLU()
+
+    def forward(self, list_x, list_y, x_size):
+        up_score, tmp_feature = [], []
+        list_y = list_y[::-1]
+
+        for i, i_x in enumerate(list_x):
+            for j, j_x in enumerate(list_y):
+                tmp = F.interpolate(self.trans[i][j](j_x), i_x.size()[2:], mode='bilinear', align_corners=True) + i_x
+                tmp_f = self.up[i][j](tmp)
+                up_score.append(F.interpolate(self.sub_score(tmp_f), x_size, mode='bilinear', align_corners=True))
+                tmp_feature.append(tmp_f)
+
+
+        tmp_fea = tmp_feature[0]
+        for i_fea in range(len(tmp_feature) - 1):
+            tmp_fea = self.relu(torch.add(tmp_fea, F.interpolate((tmp_feature[i_fea + 1]), tmp_feature[0].size()[2:],
+                                                                 mode='bilinear', align_corners=True)))
+        up_score.append(F.interpolate(self.sub_score(tmp_fea), x_size, mode='bilinear', align_corners=True))
+        # up_score.append(F.interpolate(self.final_score(tmp_fea), x_size, mode='bilinear', align_corners=True))
+
+        return up_score
 
 if __name__ == "__main__":
     config_resnext101 = {'convert': [[64, 256, 512, 1024, 2048], [32, 64, 64, 64, 64]]}
@@ -115,9 +171,20 @@ if __name__ == "__main__":
 
     merge1_layers = MergeLayer1(config['merge1'])
     up_edge, edge_feature, up_sal, sal_feature, up_subitizing = merge1_layers(EF, [257, 257])
-    print(up_edge[0].shape)
+    # Pred , DF1         , DF2345, Pred
 
-    plt.imshow(up_edge[0].reshape(257, 257, 1).detach().numpy())
+    # print(up_edge[0].shape)
+    # print(edge_feature[0].shape)
+    # print(up_sal[0].shape)
+    # print(sal_feature[0].shape)
+    # plt.imshow(up_edge[0].reshape(257, 257, 1).detach().numpy())
+    # plt.show()
+
+    merge2_layers = MergeLayer2(config['merge2'])
+    up_score = merge2_layers(edge_feature, sal_feature, [257, 257])
+    print(up_score[0].shape)
+    print(up_score[0])
+    plt.imshow(up_score[0].reshape(257, 257, 1).detach().numpy())
     plt.show()
 
 
