@@ -118,30 +118,28 @@ class RFtoPred(nn.Module):
 
         return [pred0, pred1, pred2, pred3, S_f]
 
+class MTMT(nn.Module):
+    def __init__(self):
+        super(MTMT, self).__init__()
+        self.resNext = ResNeXt101()
+        self.convert = ConvertResNext()
+        self.EFtoDF = EFtoDF()
+        self.DFtoPred = DFtoPred()
+        self.DFtoRF = DFtoRF()
+        self.RFtoPred = RFtoPred()
 
-if __name__ == "__main__":
-    img = Image.open("UCF/InputImages/04822305_2305_3329_2561_3585.jpg")
-    img = ToTensor()(img).unsqueeze(0)
+    def forward(self, img):
+        img = ToTensor()(img).unsqueeze(0)
+        size = img.size()[2:]
+        EF = self.convert(self.resNext(img))
+        DF = self.EFtoDF(EF)
+        DFPred = self.DFtoPred(DF, size)
+        RF = self.DFtoRF(DF)
+        RFPred = self.RFtoPred(RF, size)
 
-    ResNext = ResNeXt101()
-    ResNextFeatures = ResNext.forward(img)
+        return DFPred, RFPred
 
-    convertResNext = ConvertResNext()
-    EF = convertResNext.forward(ResNextFeatures)
 
-    toDF = EFtoDF()
-    DF = toDF.forward(EF)
-
-    toPred = DFtoPred()
-    pred = toPred(DF, 257)
-
-    toRF = DFtoRF()
-    RF = toRF(DF)
-
-    toPred2 = RFtoPred()
-    pred2 = toPred2(RF, 257)
-
-    plt.imshow(pred2[0].reshape(257, 257, 1).detach().numpy())
-    plt.show()
+  #  plt.imshow(pred2[4].reshape(257, 257, 1).detach().numpy())
 
 
