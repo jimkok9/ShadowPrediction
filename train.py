@@ -20,8 +20,8 @@ import utils
 from main import MTMT
 from dataloaders.SBU import SBU, relabel_dataset
 from dataloaders import joint_transforms
+
 parser = argparse.ArgumentParser()
-# parser.add_argument('--root_path', type=str, default='/home/ext/chenzhihao/Datasets/union-shadow_extend/union-Train', help='Name of Experiment')
 parser.add_argument('--root_path', type=str, default='/home/ext/chenzhihao/Datasets/SBU_USR_manShadow/union-Train', help='Name of Experiment')
 parser.add_argument('--exp', type=str,  default='MTMT', help='model_name')
 parser.add_argument('--max_iterations', type=int,  default=10000, help='maximum epoch number to train')
@@ -30,10 +30,7 @@ parser.add_argument('--labeled_bs', type=int, default=4, help='labeled_batch_siz
 parser.add_argument('--base_lr', type=float,  default=0.005, help='maximum epoch number to train')
 parser.add_argument('--lr_decay', type=float,  default=0.9, help='learning rate decay')
 parser.add_argument('--edge', type=float, default='10', help='edge learning weight')
-parser.add_argument('--deterministic', type=int,  default=0, help='whether use deterministic training')
-parser.add_argument('--seed', type=int,  default=1337, help='random seed')
 parser.add_argument('--gpu', type=str,  default='1', help='GPU to use')
-### costs
 parser.add_argument('--ema_decay', type=float,  default=0.99, help='ema_decay')
 parser.add_argument('--consistency_type', type=str,  default="mse", help='consistency_type')
 parser.add_argument('--consistency', type=float,  default=1, help='consistency')
@@ -44,12 +41,9 @@ parser.add_argument('--repeat', type=int,  default=3, help='repeat')
 args = parser.parse_args()
 
 train_data_path = args.root_path
-# snapshot_path = "../model_SBU_BDRAR/torch040_baseline_allCon_resample6-"+str(args.labeled_bs)+"_con-"+str(args.consistency)+"/" + args.exp + "/"
-snapshot_path = "../model_SBU_MTMT/baselineC64_DSS_unlabelcons/repeat"+str(args.repeat)+'_edge'+str(args.edge)+'lr'+str(args.base_lr)+'consistency'+str(args.consistency)+'subitizing'+str(args.subitizing)+'/'
 tmp_path = 'tmp_see'
 if not os.path.exists(tmp_path):
     os.mkdir(tmp_path)
-print(os.path)
 
 os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 batch_size = args.batch_size * len(args.gpu.split(','))
@@ -59,21 +53,14 @@ labeled_bs = args.labeled_bs
 lr_decay = args.lr_decay
 loss_record = 0
 
-if args.deterministic:
-    cudnn.benchmark = False
-    cudnn.deterministic = True
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    torch.cuda.manual_seed(args.seed)
-else:
-    cudnn.benchmark = True
+cudnn.benchmark = False
+cudnn.deterministic = True
 
 num_classes = 2
 
 def get_current_consistency_weight(epoch):
     # Consistency ramp-up from https://arxiv.org/abs/1610.02242
-    return args.consistency * ramps.sigmoid_rampup(epoch, args.consistency_rampup)
+    return args.consistency * utils.ramps.sigmoid_rampup(epoch, args.consistency_rampup)
 
 def create_model():
     net = MTMT()
@@ -82,20 +69,8 @@ def create_model():
     return net_cuda
 
 if __name__ == "__main__":
-    ## make logger file
-    if not os.path.exists(snapshot_path):
-        os.makedirs(snapshot_path)
-    if os.path.exists(snapshot_path + '/code'):
-        shutil.rmtree(snapshot_path + '/code')
-    shutil.copytree('.', snapshot_path + '/code', shutil.ignore_patterns(['.git','__pycache__']))
-
-    logging.basicConfig(filename=snapshot_path+"/log.txt", level=logging.INFO,
-                        format='[%(asctime)s.%(msecs)03d] %(message)s', datefmt='%H:%M:%S')
-    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
-    logging.info(str(args))
-
     model = create_model()
-    ema_model = create_model(ema=True)
+    ema_model = create_model()
 
     joint_transform = joint_transforms.Compose([
         joint_transforms.RandomHorizontallyFlip(),
@@ -114,7 +89,7 @@ if __name__ == "__main__":
     db_train = SBU(root=train_data_path, joint_transform=joint_transform, transform=img_transform, target_transform=target_transform, mod='union', multi_task=True, edge=True)
 
     labeled_idxs, unlabeled_idxs = relabel_dataset(db_train, edge_able=True)
-    batch_sampler = TwoStreamBatchSampler(labeled_idxs, unlabeled_idxs, batch_size, batch_size-labeled_bs)
+    batch_sampler = utils.TwoStreamBatchSampler(labeled_idxs, unlabeled_idxs, batch_size, batch_size-labeled_bs)
     def worker_init_fn(worker_id):
         random.seed(args.seed+worker_id)
     trainloader = DataLoader(db_train, batch_sampler=batch_sampler, num_workers=4, worker_init_fn=worker_init_fn)
@@ -133,14 +108,13 @@ if __name__ == "__main__":
 
     if args.consistency_type == 'mse':
         # consistency_criterion = losses.softmax_mse_loss
-        consistency_criterion = losses.sigmoid_mse_loss
+        consistency_criterion = utils.losses.sigmoid_mse_loss
     elif args.consistency_type == 'kl':
         # consistency_criterion = losses.softmax_kl_loss
         consistency_criterion = F.kl_div
     else:
         assert False, args.consistency_type
 
-    writer = SummaryWriter(snapshot_path+'/log')
     logging.info("{} itertations per epoch".format(len(trainloader)))
 
     iter_num = 0
@@ -207,8 +181,8 @@ if __name__ == "__main__":
             optimizer.step()
 
             iter_num = iter_num + 1
-            writer.add_scalar('lr', lr_, iter_num)
-            writer.add_scalar('loss/loss', loss, iter_num)
+           # writer.add_scalar('lr', lr_, iter_num)
+           # writer.add_scalar('loss/loss', loss, iter_num)
 
             # loss_all_record.update(loss.item(), batch_size)
             shadow_loss2_record.update(shadow_loss2[-1].item(), labeled_bs)
