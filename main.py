@@ -118,6 +118,34 @@ class RFtoPred(nn.Module):
 
         return [pred0, pred1, pred2, pred3, S_f]
 
+class fullModel(nn.Module):
+    def __init__(self, resNext, convertResNext, EFtoDF, pred, DFtoRF, pred2):
+        super(fullModel, self).__init__()
+        self.resNext = resNext
+        self.convertResNext = convertResNext
+        self.EFtoDF = EFtoDF
+        self.DFtoRF = DFtoRF
+        self.pred = pred
+        self.pred2 = pred2
+
+    def forward(self, x):
+        features = self.resNext(x)
+        EF = self.convertResNext(features)
+        DF = self.EFtoDF(EF)
+        pred = self.pred(DF, 257)
+        toRF = self.DFtoRF(DF)
+        pred2 = self.pred2(toRF, 257)
+        print(len(pred[0][0][0][0]))
+        print(len(pred2[0][0][0][0]))
+        print(type(pred))
+        print(type(pred[0][0][0][0]))
+        out = []
+        out.append(pred[0][0][0][0])
+        out.append(pred2[0][0][0][0])
+
+        return out
+        # return [pred, toPred2]
+
 
 if __name__ == "__main__":
     img = Image.open("UCF/InputImages/04822305_2305_3329_2561_3585.jpg")
@@ -140,6 +168,9 @@ if __name__ == "__main__":
 
     toPred2 = RFtoPred()
     pred2 = toPred2(RF, 257)
+
+    fullmod = fullModel(ResNext, convertResNext, toDF, toPred, toRF, toPred2)
+    fullmod(img)
 
     plt.imshow(pred2[0].reshape(257, 257, 1).detach().numpy())
     plt.show()
