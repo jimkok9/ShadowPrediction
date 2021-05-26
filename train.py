@@ -70,7 +70,9 @@ batch_size = 6
 labeled_bs = 61
 optimizer = torch.optim.SGD(teacherModel.parameters(), lr=learning_rate)
 dataset = CustomImageDataset(groundTruthShadowsDirectory = "UCF\GroundTruth", groundTruthShadowEdgesDirectory= "UCF\EdgeMasks", imagesDirectory = "UCF\InputImages")
-labelled, unlabelled = getIndices(dataset)
+# labelled, unlabelled = getIndices(dataset)
+teacherModel.train()
+
 
 if(len(unlabelled) > 0):
     batch_sampler = TwoStreamBatchSampler(labelled, unlabelled, batch_size, batch_size - labeled_bs)
