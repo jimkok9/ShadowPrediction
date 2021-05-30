@@ -10,13 +10,13 @@ import matplotlib.pyplot as plt
 class ConvertResNext(nn.Module):
     def __init__(self):
         super(ConvertResNext, self).__init__()
-        ConvertLayers = []
+        convertLayers = []
         input_channel_size = [64, 256, 512, 1024, 2048]
         output_channel_size = [32, 64, 64, 64, 64]
         for i in range(len(input_channel_size)):
-            ConvertLayers.append(nn.Sequential(nn.Conv2d(input_channel_size[i], output_channel_size[i], 1, 1, bias=False),
+            convertLayers.append(nn.Sequential(nn.Conv2d(input_channel_size[i], output_channel_size[i], 1, 1, bias=False),
                                      nn.BatchNorm2d(output_channel_size[i]), nn.ReLU(inplace=True)))
-        self.convert = nn.ModuleList(ConvertLayers)
+        self.convert = nn.ModuleList(convertLayers)
 
     def forward(self, outputResNext):
         EF = []
@@ -62,6 +62,19 @@ class EFtoDF(nn.Module):
         DF1 = EF[0] + F.interpolate(self.oneXoneConv(DF5), EF[0].size()[2:], mode='bilinear', align_corners=True)
 
         return [DF1, DF2, DF3, DF4, DF5]
+
+class EF5ToSC(nn.Module):
+    def __init__(self):
+        super(EF5ToSC, self).__init__()
+        self.linear = nn.Linear(64, 1)
+
+    def forward(self, EF5):
+        vector = F.adaptive_avg_pool2d(EF5, output_size=1)
+        vector = vector.view(vector.size(0), -1)
+        sc_actual = self.linear(vector)
+
+        return sc_actual
+
 
 class DFtoPred(nn.Module):
     def __init__(self):
@@ -139,7 +152,5 @@ class MTMT(nn.Module):
 
         return DFPred, RFPred
 
-
-  #  plt.imshow(pred2[4].reshape(257, 257, 1).detach().numpy())
 
 

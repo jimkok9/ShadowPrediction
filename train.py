@@ -1,69 +1,59 @@
 import os
-import sys
-from tqdm import tqdm
-from tensorboardX import SummaryWriter
-import shutil
+
 import argparse
 import logging
 import time
-import random
-import numpy as np
-
 import torch
 import torch.optim as optim
-from torchvision import transforms
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
-from torch.utils.data import DataLoader
 import torchvision.utils as vutils
-import utils
+import Utils
+
+from Utils import losses
+from Utils import ramps
+from Utils import util
+from torch.utils.data import DataLoader
+from torchvision import transforms
+from tqdm import tqdm
 from main import MTMT
 from dataloaders.SBU import SBU, relabel_dataset
 from dataloaders import joint_transforms
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--root_path', type=str, default='/home/ext/chenzhihao/Datasets/SBU_USR_manShadow/union-Train', help='Name of Experiment')
+parser.add_argument('--train_data_path', type=str, default='C:/Users\Jim Kok\Desktop\SBU-shadow\SBUTrain4KRecoveredSmall', help='Name of Experiment')
 parser.add_argument('--exp', type=str,  default='MTMT', help='model_name')
 parser.add_argument('--max_iterations', type=int,  default=10000, help='maximum epoch number to train')
-parser.add_argument('--batch_size', type=int, default=6, help='batch_size per gpu')
-parser.add_argument('--labeled_bs', type=int, default=4, help='labeled_batch_size per gpu')
 parser.add_argument('--base_lr', type=float,  default=0.005, help='maximum epoch number to train')
 parser.add_argument('--lr_decay', type=float,  default=0.9, help='learning rate decay')
 parser.add_argument('--edge', type=float, default='10', help='edge learning weight')
-parser.add_argument('--gpu', type=str,  default='1', help='GPU to use')
 parser.add_argument('--ema_decay', type=float,  default=0.99, help='ema_decay')
 parser.add_argument('--consistency_type', type=str,  default="mse", help='consistency_type')
 parser.add_argument('--consistency', type=float,  default=1, help='consistency')
 parser.add_argument('--consistency_rampup', type=float,  default=7.0, help='consistency_rampup')
-parser.add_argument('--scale', type=int,  default=416, help='batch size of 8 with resolution of 416*416 is exactly OK')
 parser.add_argument('--subitizing', type=float,  default=1, help='subitizing loss weight')
 parser.add_argument('--repeat', type=int,  default=3, help='repeat')
 args = parser.parse_args()
 
-train_data_path = args.root_path
-tmp_path = 'tmp_see'
-if not os.path.exists(tmp_path):
-    os.mkdir(tmp_path)
+scale = 416
+train_data_path = args.train_data_path
 
-os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-batch_size = args.batch_size * len(args.gpu.split(','))
+batch_size = 6
 max_iterations = args.max_iterations
 base_lr = args.base_lr
-labeled_bs = args.labeled_bs
+labeled_bs = 4
 lr_decay = args.lr_decay
 loss_record = 0
-
-cudnn.benchmark = False
-cudnn.deterministic = True
 
 num_classes = 2
 
 def get_current_consistency_weight(epoch):
     # Consistency ramp-up from https://arxiv.org/abs/1610.02242
-    return args.consistency * utils.ramps.sigmoid_rampup(epoch, args.consistency_rampup)
+    return args.consistency * Utils.ramps.sigmoid_rampup(epoch, args.consistency_rampup)
 
 def create_model():
     net = MTMT()
+    torch.backends.cudnn.benchmark = True
     net_cuda = net.cuda()
 
     return net_cuda
@@ -74,10 +64,10 @@ if __name__ == "__main__":
 
     joint_transform = joint_transforms.Compose([
         joint_transforms.RandomHorizontallyFlip(),
-        joint_transforms.Resize((args.scale, args.scale))
+        joint_transforms.Resize((scale, scale))
     ])
     val_joint_transform = joint_transforms.Compose([
-        joint_transforms.Resize((args.scale, args.scale))
+        joint_transforms.Resize((scale, scale))
     ])
     img_transform = transforms.Compose([
         transforms.ToTensor(),
@@ -86,13 +76,12 @@ if __name__ == "__main__":
     target_transform = transforms.ToTensor()
     to_pil = transforms.ToPILImage()
 
-    db_train = SBU(root=train_data_path, joint_transform=joint_transform, transform=img_transform, target_transform=target_transform, mod='union', multi_task=True, edge=True)
+    db_train = SBU(root=train_data_path, joint_transform=joint_transform, transform=img_transform, target_transform=target_transform, mod='union', edge=False)
+    labeled_idxs, unlabeled_idxs = relabel_dataset(db_train, edge_able=False)
+    print(unlabeled_idxs)
+    batch_sampler = Utils.util.TwoStreamBatchSampler(labeled_idxs, unlabeled_idxs, batch_size, batch_size-labeled_bs)
 
-    labeled_idxs, unlabeled_idxs = relabel_dataset(db_train, edge_able=True)
-    batch_sampler = utils.TwoStreamBatchSampler(labeled_idxs, unlabeled_idxs, batch_size, batch_size-labeled_bs)
-    def worker_init_fn(worker_id):
-        random.seed(args.seed+worker_id)
-    trainloader = DataLoader(db_train, batch_sampler=batch_sampler, num_workers=4, worker_init_fn=worker_init_fn)
+    trainloader = DataLoader(db_train, batch_sampler=batch_sampler)
 
     model.train()
     ema_model.train()
@@ -108,7 +97,7 @@ if __name__ == "__main__":
 
     if args.consistency_type == 'mse':
         # consistency_criterion = losses.softmax_mse_loss
-        consistency_criterion = utils.losses.sigmoid_mse_loss
+        consistency_criterion = Utils.losses.sigmoid_mse_loss
     elif args.consistency_type == 'kl':
         # consistency_criterion = losses.softmax_kl_loss
         consistency_criterion = F.kl_div
@@ -123,8 +112,8 @@ if __name__ == "__main__":
     model.train()
     for epoch_num in tqdm(range(max_epoch), ncols=70):
         time1 = time.time()
-        shadow_loss2_record, shadow_con_loss2_record, edge_loss_record, edge_con_loss_record = utils.AverageMeter(), utils.AverageMeter(), utils.AverageMeter(), utils.AverageMeter()
-        subitizing_loss_record = utils.AverageMeter()
+        shadow_loss2_record, shadow_con_loss2_record, edge_loss_record, edge_con_loss_record = util.AverageMeter(), util.AverageMeter(), util.AverageMeter(), util.AverageMeter()
+        subitizing_loss_record = util.AverageMeter()
         # loss2_h2l_record, loss3_h2l_record, loss4_h2l_record = AverageMeter(), AverageMeter(), AverageMeter()
         # loss1_l2h_record, loss2_l2h_record, loss3_l2h_record = AverageMeter(), AverageMeter(), AverageMeter()
         # loss4_l2h_record, consistency_record = AverageMeter(), AverageMeter()
@@ -146,13 +135,13 @@ if __name__ == "__main__":
 
             ## calculate the loss
             ## subitizing loss
-            subitizing_loss = utils.losses.sigmoid_mse_loss(up_subitizing[:labeled_bs], number_per_batch[:labeled_bs])
-            subitizing_con_loss = utils.losses.sigmoid_mse_loss(up_subitizing[labeled_bs:], up_subitizing_ema[labeled_bs:])
+            subitizing_loss = Utils.losses.sigmoid_mse_loss(up_subitizing[:labeled_bs], number_per_batch[:labeled_bs])
+            subitizing_con_loss = Utils.losses.sigmoid_mse_loss(up_subitizing[labeled_bs:], up_subitizing_ema[labeled_bs:])
             ## edge loss
             edge_loss = []
             edge_con_loss = []
             for (ix, ix_ema) in zip(up_edge, up_edge_ema):
-                edge_loss.append(utils.losses.bce2d_new(ix[:labeled_bs], edge_batch[:labeled_bs], reduction='mean'))
+                edge_loss.append(Utils.losses.bce2d_new(ix[:labeled_bs], edge_batch[:labeled_bs], reduction='mean'))
                 edge_con_loss.append(consistency_criterion(ix[labeled_bs:], ix_ema[labeled_bs:]))
             edge_loss = sum(edge_loss)
             edge_con_loss = sum(edge_con_loss)
