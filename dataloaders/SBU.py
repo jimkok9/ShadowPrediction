@@ -4,7 +4,7 @@ import os.path
 import torch.utils.data as data
 from PIL import Image
 import torch
-import utils
+import Utils
 
 NO_LABEL = -1
 
@@ -52,7 +52,7 @@ def make_labeled_dataset(root, edge=False):
 
 
 class SBU(data.Dataset):
-    def __init__(self, root, joint_transform=None, transform=None, target_transform=None, mod='union', subitizing=False, subitizing_threshold=8, subitizing_min_size_per=0.005, edge=False):
+    def __init__(self, root, joint_transform=None, transform=None, target_transform=None, mod='union', subitizing=True, subitizing_threshold=8, subitizing_min_size_per=0.005, edge=False):
         assert (mod in ['union', 'labeled'])
         self.root = root
         self.mod = mod
@@ -68,7 +68,7 @@ class SBU(data.Dataset):
         # 8, 0.005
         self.subitizing_threshold = subitizing_threshold
         self.subitizing_min_size_per = subitizing_min_size_per
-        self.multi_task = False
+        self.multi_task = True
 
 
 
@@ -80,7 +80,7 @@ class SBU(data.Dataset):
         img = Image.open(img_path).convert('RGB')
         if gt_path == -1: #unlabeled data
             if self.joint_transform is not None:
-                img, _ = self.joint_transform(img, img)
+                img, _, _ = self.joint_transform(img, img, img)
             if self.transform is not None:
                 img = self.transform(img)
             target = torch.zeros((img.shape[1], img.shape[2])).unsqueeze(0) #fake label to make sure pytorch inner check
@@ -100,7 +100,7 @@ class SBU(data.Dataset):
             target = Image.open(gt_path).convert('L')
             #output subitizing knowledge for multi task learning
             if self.multi_task:
-                number_per, percentage = utils.util.cal_subitizing(target, threshold=self.subitizing_threshold, min_size_per=self.subitizing_min_size_per)
+                number_per, percentage = Utils.util.cal_subitizing(target, threshold=self.subitizing_threshold, min_size_per=self.subitizing_min_size_per)
                 number_per = torch.Tensor([number_per]) #to Tensor
 
             if self.joint_transform is not None:
@@ -134,8 +134,8 @@ def relabel_dataset(dataset, edge_able=False):
     unlabeled_idxs = []
     for idx in range(len(dataset.imgs)):
         if not edge_able:
+            print(dataset.imgs[idx])
             path, label = dataset.imgs[idx]
-            print(label)
         else:
             path, label, edge = dataset.imgs[idx]
         if label == -1:
