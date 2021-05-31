@@ -1,3 +1,4 @@
+import numpy as np
 import torch.nn.functional as F
 from resnext101_EF import ResNeXt101
 from torch import nn
@@ -147,9 +148,8 @@ class MTMT(nn.Module):
         DFPred = self.DFtoPred(DF, size)
         RF = self.DFtoRF(DF)
         RFPred = self.RFtoPred(RF, size)
-        print(DFPred[0].shape, " fa")
 
-        return [DFPred[0]], DFPred[1:], SC, [RFPred[4]]
+        return [DFPred[0]], DFPred, SC, [RFPred[4]]
 
 
 
