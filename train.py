@@ -2,8 +2,8 @@ import math
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
-import Utils
 
+import Utils
 import network
 from Utils import losses
 from Utils import util
@@ -17,17 +17,18 @@ train_data_path = 'C:/Users/Jim Kok/Desktop/SBU-shadow/SBUTrain4KRecoveredSmall'
 scale = 416
 batch_size = 2
 max_iterations = 10
-lr_decay = 0.9
-base_lr = 0.005
+lr_decay = float(0.9)
+base_lr = float(0.005)
 labeled_bs = 1
-loss_record = 0
 num_classes = 2
 consistency = 1
-ema_decay = 0.99
+ema_decay = float(0.99)
 
 if __name__ == "__main__":
     model = network.MTMT().cuda()
     ema_model = network.MTMT().cuda()
+    for param in ema_model.parameters():
+        param.detach_()
 
     joint_transform = joint_transforms.Compose([
         joint_transforms.RandomHorizontallyFlip(),
@@ -36,6 +37,7 @@ if __name__ == "__main__":
     val_joint_transform = joint_transforms.Compose([
         joint_transforms.Resize((scale, scale))
     ])
+
     target_transform = transforms.ToTensor()
 
     db_train = SBU(root=train_data_path, joint_transform=joint_transform, transform=transforms.ToTensor(), target_transform=target_transform, mod='union', edge=True)
@@ -47,17 +49,18 @@ if __name__ == "__main__":
     model.train()
     ema_model.train()
     optimizer = optim.SGD(model.parameters(), lr=base_lr, momentum=0.9, weight_decay=0.0005)
-
     consistency_criterion = Utils.losses.sigmoid_mse_loss
 
     iter_num = 0
     max_epoch = max_iterations//len(trainloader)+1
-    lr_ = base_lr
     model.train()
     for epoch_num in tqdm(range(max_epoch), ncols=70):
         for i_batch, sampled_batch in enumerate(trainloader):
+            print(i_batch)
             optimizer.param_groups[0]['lr'] = 2 * base_lr * (1 - float(iter_num) / max_iterations
                                                              ) ** lr_decay
+            optimizer.param_groups[1]['lr'] = base_lr * (1 - float(iter_num) / max_iterations
+                                                         ) ** lr_decay
             image_batch, label_batch, edge_batch, number_per_batch = sampled_batch['image'].cuda(), sampled_batch['label'].cuda(), sampled_batch['edge'].cuda(), sampled_batch['number_per'].cuda()
 
             noise = torch.clamp(torch.randn_like(image_batch) * 0.1, -0.2, 0.2)
@@ -102,8 +105,13 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
             for ema_param, param in zip(ema_model.parameters(), model.parameters()):
-                ema_param.data.mul_(1-ema_decay).add_(param.data.mul(ema_decay))
+                ema_param.data.mul_(1-ema_decay).add_(param.data.mul_(ema_decay))
+
 
             iter_num = iter_num + 1
+
+            if iter_num > max_iterations:
+                break
+
 
     torch.save(model.state_dict(), "models/model.py")
