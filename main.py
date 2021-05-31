@@ -40,8 +40,8 @@ class EFtoDF(nn.Module):
 
         oneXoneConv = nn.Sequential(nn.Conv2d(64, 32, 1, 1, bias=False), nn.ReLU(inplace=True))
 
-        self.conv = conv
-        self.shortCon = shortConnections
+        self.conv = nn.ModuleList(conv)
+        self.shortCon = nn.ModuleList(shortConnections)
         self.oneXoneConv = oneXoneConv
 
     def forward(self, EF):
@@ -85,7 +85,7 @@ class DFtoPred(nn.Module):
             predictions.append(nn.Sequential(
                 nn.Conv2d(inputChannels, 64, 3, 1, 1), nn.Conv2d(64, 64, 3, 1, 1), nn.Conv2d(64, 16, 3, 1, 1), nn.Conv2d(16, 1, 1), nn.Sigmoid()
             ))
-        self.predictions = predictions
+        self.predictions = nn.ModuleList(predictions)
 
     def forward(self, DF, sizeInput):
         pred0 = F.interpolate(self.predictions[0](DF[0]), sizeInput, mode='bilinear', align_corners=True)
@@ -102,7 +102,7 @@ class DFtoRF(nn.Module):
         oneXoneConvs = []
         for i in range(0, 5):
             oneXoneConvs.append(nn.Sequential(nn.Conv2d(64, 32, 1, 1, bias=False), nn.ReLU(inplace=True)))
-        self.oneXoneConvs = oneXoneConvs
+        self.oneXoneConvs = nn.ModuleList(oneXoneConvs)
 
     def forward(self, DF):
         RF2 = DF[0] + F.interpolate(self.oneXoneConvs[0](DF[1]), DF[0].size()[2:], mode='bilinear', align_corners=True)
@@ -120,7 +120,7 @@ class RFtoPred(nn.Module):
             predictions.append(nn.Sequential(
                 nn.Conv2d(32, 64, 3, 1, 1), nn.Conv2d(64, 64, 3, 1, 1), nn.Conv2d(64, 16, 3, 1, 1), nn.Conv2d(16, 1, 1), nn.Sigmoid()
             ))
-        self.predictions = predictions
+        self.predictions = nn.ModuleList(predictions)
 
     def forward(self, RF, sizeInput):
         pred0 = F.interpolate(self.predictions[0](RF[0]), sizeInput, mode='bilinear', align_corners=True)
@@ -140,17 +140,20 @@ class MTMT(nn.Module):
         self.DFtoPred = DFtoPred()
         self.DFtoRF = DFtoRF()
         self.RFtoPred = RFtoPred()
+        self.EF5ToSC = EF5ToSC()
 
     def forward(self, img):
-        img = ToTensor()(img).unsqueeze(0)
         size = img.size()[2:]
         EF = self.convert(self.resNext(img))
+        SC = self.EF5ToSC(EF[4])
         DF = self.EFtoDF(EF)
         DFPred = self.DFtoPred(DF, size)
         RF = self.DFtoRF(DF)
         RFPred = self.RFtoPred(RF, size)
+        print(DFPred[0].shape, " fa")
 
-        return DFPred, RFPred
+        return [DFPred[0]], DFPred[1:], SC, [RFPred[4]]
+
 
 
 

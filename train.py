@@ -1,31 +1,25 @@
-import os
-
 import argparse
 import logging
 import time
+
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
-import torch.backends.cudnn as cudnn
-import torchvision.utils as vutils
 import Utils
 
+import MTMT
+import main
 from Utils import losses
 from Utils import ramps
 from Utils import util
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
-from main import MTMT
 from dataloaders.SBU import SBU, relabel_dataset
 from dataloaders import joint_transforms
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--train_data_path', type=str, default='C:/Users\Jim Kok\Desktop\SBU-shadow\SBUTrain4KRecoveredSmall', help='Name of Experiment')
 parser.add_argument('--exp', type=str,  default='MTMT', help='model_name')
-parser.add_argument('--max_iterations', type=int,  default=10000, help='maximum epoch number to train')
-parser.add_argument('--base_lr', type=float,  default=0.005, help='maximum epoch number to train')
-parser.add_argument('--lr_decay', type=float,  default=0.9, help='learning rate decay')
 parser.add_argument('--edge', type=float, default='10', help='edge learning weight')
 parser.add_argument('--ema_decay', type=float,  default=0.99, help='ema_decay')
 parser.add_argument('--consistency_type', type=str,  default="mse", help='consistency_type')
@@ -36,13 +30,13 @@ parser.add_argument('--repeat', type=int,  default=3, help='repeat')
 args = parser.parse_args()
 
 scale = 416
-train_data_path = args.train_data_path
+train_data_path = 'test_set'
 
-batch_size = 6
-max_iterations = args.max_iterations
-base_lr = args.base_lr
-labeled_bs = 4
-lr_decay = args.lr_decay
+batch_size = 2
+max_iterations = 10
+base_lr = 0.005
+labeled_bs = 1
+lr_decay = 0.9
 loss_record = 0
 
 num_classes = 2
@@ -52,8 +46,8 @@ def get_current_consistency_weight(epoch):
     return args.consistency * Utils.ramps.sigmoid_rampup(epoch, args.consistency_rampup)
 
 def create_model():
-    net = MTMT()
-    torch.backends.cudnn.benchmark = True
+    net = main.MTMT()
+    print(torch.cuda.is_available())
     net_cuda = net.cuda()
 
     return net_cuda
@@ -76,9 +70,8 @@ if __name__ == "__main__":
     target_transform = transforms.ToTensor()
     to_pil = transforms.ToPILImage()
 
-    db_train = SBU(root=train_data_path, joint_transform=joint_transform, transform=img_transform, target_transform=target_transform, mod='union', edge=False)
-    labeled_idxs, unlabeled_idxs = relabel_dataset(db_train, edge_able=False)
-    print(unlabeled_idxs)
+    db_train = SBU(root=train_data_path, joint_transform=joint_transform, transform=img_transform, target_transform=target_transform, mod='union', edge=True)
+    labeled_idxs, unlabeled_idxs = relabel_dataset(db_train, edge_able=True)
     batch_sampler = Utils.util.TwoStreamBatchSampler(labeled_idxs, unlabeled_idxs, batch_size, batch_size-labeled_bs)
 
     trainloader = DataLoader(db_train, batch_sampler=batch_sampler)
@@ -125,6 +118,7 @@ if __name__ == "__main__":
                                                          ) ** lr_decay
             # print('fetch data cost {}'.format(time2-time1))
             image_batch, label_batch, edge_batch, number_per_batch = sampled_batch['image'], sampled_batch['label'], sampled_batch['edge'], sampled_batch['number_per']
+            #image_batch, label_batch, number_per_batch = sampled_batch['image'], sampled_batch['label'], sampled_batch['number_per']
             image_batch, label_batch, edge_batch, number_per_batch = image_batch.cuda(), label_batch.cuda(), edge_batch.cuda(), number_per_batch.cuda()
 
             noise = torch.clamp(torch.randn_like(image_batch) * 0.1, -0.2, 0.2)
@@ -170,10 +164,6 @@ if __name__ == "__main__":
             optimizer.step()
 
             iter_num = iter_num + 1
-           # writer.add_scalar('lr', lr_, iter_num)
-           # writer.add_scalar('loss/loss', loss, iter_num)
-
-            # loss_all_record.update(loss.item(), batch_size)
             shadow_loss2_record.update(shadow_loss2[-1].item(), labeled_bs)
             edge_loss_record.update(edge_loss.item(), labeled_bs)
             shadow_con_loss2_record.update(shadow_con_loss2[-1].item(), batch_size-labeled_bs)
@@ -185,33 +175,4 @@ if __name__ == "__main__":
             loss_record = 'iteration %d : shadow_f : %f5 , edge: %f5 , shadow_f_con: %f5  edge_con: %f5 loss_weight: %f5, lr: %f5' % \
                           (iter_num, shadow_loss2_record.avg, edge_loss_record.avg, shadow_con_loss2_record.avg,edge_con_loss_record.avg, consistency_weight, optimizer.param_groups[1]['lr'])
 
-            if iter_num % 200 == 0:
-                vutils.save_image(torch.sigmoid(up_shadow_final[-1].data), tmp_path + '/iter%d-d_predict_f.jpg' % iter_num, normalize=True,
-                                  padding=0)
-                vutils.save_image(torch.sigmoid(up_shadow_final_ema[-1].data),
-                                  tmp_path + '/iter%d-e_predict_f.jpg' % iter_num, normalize=True,
-                                  padding=0)
-                vutils.save_image(torch.sigmoid(up_shadow[-1].data), tmp_path + '/iter%d-c_predict.jpg' % iter_num,
-                                  normalize=True,
-                                  padding=0)
-                vutils.save_image(torch.sigmoid(up_edge[-1].data), tmp_path + '/iter%d-g_edge.jpg' % iter_num,
-                                  normalize=True, padding=0)
-                vutils.save_image(torch.sigmoid(up_edge_ema[-1].data), tmp_path + '/iter%d-h_edge.jpg' % iter_num,
-                                  normalize=True, padding=0)
-                vutils.save_image(image_batch.data, tmp_path + '/iter%d-a_shadow-data.jpg' % iter_num, padding=0)
-                vutils.save_image(label_batch.data, tmp_path + '/iter%d-b_shadow-target.jpg' % iter_num, padding=0)
-                vutils.save_image(edge_batch.data, tmp_path + '/iter%d-f_edge-target.jpg' % iter_num, padding=0)
-            if iter_num >= max_iterations:
-                break
-            time1 = time.time()
-        if iter_num >= max_iterations:
-            break
-    save_mode_path = os.path.join(snapshot_path, 'iter_'+str(max_iterations)+'.pth')
-    # save_mode_path_ema = os.path.join(snapshot_path, 'iter_' + str(max_iterations) + '_ema.pth')
-    torch.save(model.state_dict(), save_mode_path)
-    # torch.save(ema_model.state_dict(), save_mode_path_ema)
-    logging.info("save model to {}".format(save_mode_path))
-    writer.close()
-    with open('record/loss_record_MTMT.txt', 'a') as f:
-        f.write(snapshot_path+' ')
-        f.write(str(loss_record)+'\r\n')
+    torch.save(model.state_dict(), "models/model.py")
