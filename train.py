@@ -45,6 +45,7 @@ if __name__ == "__main__":
     trainloader = DataLoader(db_train, batch_sampler=batch_sampler)
 
     model.train()
+    ema_model.train()
     optimizer = optim.SGD(model.parameters(), lr=base_lr, momentum=0.9, weight_decay=0.0005)
 
     consistency_criterion = Utils.losses.sigmoid_mse_loss
@@ -52,6 +53,7 @@ if __name__ == "__main__":
     iter_num = 0
     max_epoch = max_iterations//len(trainloader)+1
     lr_ = base_lr
+    model.train()
     for epoch_num in tqdm(range(max_epoch), ncols=70):
         for i_batch, sampled_batch in enumerate(trainloader):
             optimizer.param_groups[0]['lr'] = 2 * base_lr * (1 - float(iter_num) / max_iterations
@@ -100,7 +102,7 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
             for ema_param, param in zip(ema_model.parameters(), model.parameters()):
-                ema_param.data.mul_(1-ema_decay).add_(param.data.mul_(ema_decay))
+                ema_param.data.mul_(1-ema_decay).add_(param.data.mul(ema_decay))
 
             iter_num = iter_num + 1
 
