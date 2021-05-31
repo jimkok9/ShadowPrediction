@@ -20,7 +20,6 @@ from dataloaders.SBU import SBU, relabel_dataset
 from dataloaders import joint_transforms
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--exp', type=str,  default='MTMT', help='model_name')
 parser.add_argument('--edge', type=float, default='10', help='edge learning weight')
 parser.add_argument('--ema_decay', type=float,  default=0.99, help='ema_decay')
 parser.add_argument('--subitizing', type=float,  default=1, help='subitizing loss weight')
@@ -54,14 +53,9 @@ if __name__ == "__main__":
     val_joint_transform = joint_transforms.Compose([
         joint_transforms.Resize((scale, scale))
     ])
-    img_transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    ])
     target_transform = transforms.ToTensor()
-    to_pil = transforms.ToPILImage()
 
-    db_train = SBU(root=train_data_path, joint_transform=joint_transform, transform=img_transform, target_transform=target_transform, mod='union', edge=True)
+    db_train = SBU(root=train_data_path, joint_transform=joint_transform, transform=transforms.ToTensor(), target_transform=target_transform, mod='union', edge=True)
     labeled_idxs, unlabeled_idxs = relabel_dataset(db_train, edge_able=True)
     batch_sampler = Utils.util.TwoStreamBatchSampler(labeled_idxs, unlabeled_idxs, batch_size, batch_size-labeled_bs)
 
@@ -85,18 +79,23 @@ if __name__ == "__main__":
             time2 = time.time()
             optimizer.param_groups[0]['lr'] = 10 * pow(math.e, (-5*(1-float(iter_num) / max_iterations)**2))
             image_batch, label_batch, edge_batch, number_per_batch = sampled_batch['image'], sampled_batch['label'], sampled_batch['edge'], sampled_batch['number_per']
+            print(image_batch.shape, " size image batch")
+            print(edge_batch.shape, " shape edge batch")
+            print(label_batch.shape, " shape label batch")
+            print(number_per_batch, " number per batch")
             image_batch, label_batch, edge_batch, number_per_batch = image_batch.cuda(), label_batch.cuda(), edge_batch.cuda(), number_per_batch.cuda()
 
             noise = torch.clamp(torch.randn_like(image_batch) * 0.1, -0.2, 0.2)
             ema_inputs = image_batch + noise
-            up_edge, up_shadow, up_subitizing, up_shadow_final = model(image_batch)
+            up_edge, up_shadow, SC, up_shadow_final = model(image_batch)
+
             with torch.no_grad():
                 up_edge_ema, up_shadow_ema, up_subitizing_ema, up_shadow_final_ema = ema_model(ema_inputs)
 
             ## calculate the loss
             ## subitizing loss
-            subitizing_loss = Utils.losses.sigmoid_mse_loss(up_subitizing[:labeled_bs], number_per_batch[:labeled_bs])
-            subitizing_con_loss = Utils.losses.sigmoid_mse_loss(up_subitizing[labeled_bs:], up_subitizing_ema[labeled_bs:])
+            subitizing_loss = Utils.losses.sigmoid_mse_loss(SC[:labeled_bs], number_per_batch[:labeled_bs])
+            subitizing_con_loss = Utils.losses.sigmoid_mse_loss(SC[labeled_bs:], up_subitizing_ema[labeled_bs:])
             ## edge loss
             edge_loss = []
             edge_con_loss = []
