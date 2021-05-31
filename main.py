@@ -1,10 +1,7 @@
 import torch.nn.functional as F
-from PIL import Image
 from resnext101_EF import ResNeXt101
-from torchvision.transforms import ToTensor
 from torch import nn
 import torch
-import matplotlib.pyplot as plt
 
 
 class ConvertResNext(nn.Module):
