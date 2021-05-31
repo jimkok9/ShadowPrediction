@@ -1,4 +1,6 @@
 import math
+import random
+
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
@@ -15,12 +17,11 @@ from dataloaders import joint_transforms
 
 train_data_path = 'C:/Users/Jim Kok/Desktop/SBU-shadow/SBUTrain4KRecoveredSmall'
 scale = 416
-batch_size = 2
-max_iterations = 10
+batch_size = 3
+max_iterations = 10000
 lr_decay = float(0.9)
 base_lr = float(0.005)
-labeled_bs = 1
-num_classes = 2
+labeled_bs = 2
 consistency = 1
 ema_decay = float(0.99)
 
@@ -44,7 +45,9 @@ if __name__ == "__main__":
     labeled_idxs, unlabeled_idxs = relabel_dataset(db_train, edge_able=True)
     batch_sampler = Utils.util.TwoStreamBatchSampler(labeled_idxs, unlabeled_idxs, batch_size, batch_size-labeled_bs)
 
+
     trainloader = DataLoader(db_train, batch_sampler=batch_sampler)
+
 
     model.train()
     ema_model.train()
@@ -59,8 +62,6 @@ if __name__ == "__main__":
             print(i_batch)
             optimizer.param_groups[0]['lr'] = 2 * base_lr * (1 - float(iter_num) / max_iterations
                                                              ) ** lr_decay
-            optimizer.param_groups[1]['lr'] = base_lr * (1 - float(iter_num) / max_iterations
-                                                         ) ** lr_decay
             image_batch, label_batch, edge_batch, number_per_batch = sampled_batch['image'].cuda(), sampled_batch['label'].cuda(), sampled_batch['edge'].cuda(), sampled_batch['number_per'].cuda()
 
             noise = torch.clamp(torch.randn_like(image_batch) * 0.1, -0.2, 0.2)
