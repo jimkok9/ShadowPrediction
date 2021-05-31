@@ -1,17 +1,11 @@
-import argparse
-import logging
 import math
-import time
-
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
 import Utils
 
-import MTMT
 import network
 from Utils import losses
-from Utils import ramps
 from Utils import util
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -19,28 +13,17 @@ from tqdm import tqdm
 from dataloaders.SBU import SBU, relabel_dataset
 from dataloaders import joint_transforms
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--edge', type=float, default='10', help='edge learning weight')
-parser.add_argument('--ema_decay', type=float,  default=0.99, help='ema_decay')
-parser.add_argument('--subitizing', type=float,  default=1, help='subitizing loss weight')
-parser.add_argument('--repeat', type=int,  default=3, help='repeat')
-args = parser.parse_args()
-
-train_data_path = 'test_set'
+train_data_path = 'C:/Users/Jim Kok/Desktop/SBU-shadow/SBUTrain4KRecoveredSmall'
 scale = 416
 batch_size = 2
 max_iterations = 10
+lr_decay = 0.9
 base_lr = 0.005
 labeled_bs = 1
-lr_decay = 0.9
 loss_record = 0
 num_classes = 2
 consistency = 1
-consistency_rampup = 7
-
-def get_current_consistency_weight(epoch):
-    # Consistency ramp-up from https://arxiv.org/abs/1610.02242
-    return consistency * Utils.ramps.sigmoid_rampup(epoch, consistency_rampup)
+ema_decay = 0.99
 
 if __name__ == "__main__":
     model = network.MTMT().cuda()
@@ -62,7 +45,6 @@ if __name__ == "__main__":
     trainloader = DataLoader(db_train, batch_sampler=batch_sampler)
 
     model.train()
-    ema_model.train()
     optimizer = optim.SGD(model.parameters(), lr=base_lr, momentum=0.9, weight_decay=0.0005)
 
     consistency_criterion = Utils.losses.sigmoid_mse_loss
@@ -70,36 +52,26 @@ if __name__ == "__main__":
     iter_num = 0
     max_epoch = max_iterations//len(trainloader)+1
     lr_ = base_lr
-    model.train()
     for epoch_num in tqdm(range(max_epoch), ncols=70):
-        time1 = time.time()
-        shadow_loss2_record, shadow_con_loss2_record, edge_loss_record, edge_con_loss_record, subitizing_loss_record = util.AverageMeter(), util.AverageMeter(), util.AverageMeter(), util.AverageMeter(), util.AverageMeter()
-
         for i_batch, sampled_batch in enumerate(trainloader):
-            time2 = time.time()
-            optimizer.param_groups[0]['lr'] = 10 * pow(math.e, (-5*(1-float(iter_num) / max_iterations)**2))
-            image_batch, label_batch, edge_batch, number_per_batch = sampled_batch['image'], sampled_batch['label'], sampled_batch['edge'], sampled_batch['number_per']
-            print(image_batch.shape, " size image batch")
-            print(edge_batch.shape, " shape edge batch")
-            print(label_batch.shape, " shape label batch")
-            print(number_per_batch, " number per batch")
-            image_batch, label_batch, edge_batch, number_per_batch = image_batch.cuda(), label_batch.cuda(), edge_batch.cuda(), number_per_batch.cuda()
+            optimizer.param_groups[0]['lr'] = 2 * base_lr * (1 - float(iter_num) / max_iterations
+                                                             ) ** lr_decay
+            image_batch, label_batch, edge_batch, number_per_batch = sampled_batch['image'].cuda(), sampled_batch['label'].cuda(), sampled_batch['edge'].cuda(), sampled_batch['number_per'].cuda()
 
             noise = torch.clamp(torch.randn_like(image_batch) * 0.1, -0.2, 0.2)
             ema_inputs = image_batch + noise
-            up_edge, up_shadow, SC, up_shadow_final = model(image_batch)
+            edge, up_shadow, SC, up_shadow_final = model(image_batch)
 
             with torch.no_grad():
-                up_edge_ema, up_shadow_ema, up_subitizing_ema, up_shadow_final_ema = ema_model(ema_inputs)
+                edge_ema, up_shadow_ema, SC_ema, up_shadow_final_ema = ema_model(ema_inputs)
 
-            ## calculate the loss
-            ## subitizing loss
+            ## calculate subitizing loss and subitizing consistency loss
             subitizing_loss = Utils.losses.sigmoid_mse_loss(SC[:labeled_bs], number_per_batch[:labeled_bs])
-            subitizing_con_loss = Utils.losses.sigmoid_mse_loss(SC[labeled_bs:], up_subitizing_ema[labeled_bs:])
+            subitizing_con_loss = Utils.losses.sigmoid_mse_loss(SC[labeled_bs:], SC_ema[labeled_bs:])
             ## edge loss
             edge_loss = []
             edge_con_loss = []
-            for (ix, ix_ema) in zip(up_edge, up_edge_ema):
+            for (ix, ix_ema) in zip(edge, edge_ema):
                 edge_loss.append(Utils.losses.bce2d_new(ix[:labeled_bs], edge_batch[:labeled_bs], reduction='mean'))
                 edge_con_loss.append(consistency_criterion(ix[labeled_bs:], ix_ema[labeled_bs:]))
             edge_loss = sum(edge_loss)
@@ -117,9 +89,9 @@ if __name__ == "__main__":
                 shadow_con_loss2.append(consistency_criterion(ix[labeled_bs:], ix_ema[labeled_bs:]))
 
             shadow_loss = sum(shadow_loss1) + sum(shadow_loss2)
-            supervised_loss = shadow_loss + edge_loss * args.edge + subitizing_loss*args.subitizing
+            supervised_loss = shadow_loss + edge_loss * 10 + subitizing_loss * 1
 
-            consistency_weight = get_current_consistency_weight(epoch_num)
+            consistency_weight = 10 * pow(math.e, (-5*(1-float(iter_num) / max_iterations)**2))
             consistency_loss = consistency_weight * (edge_con_loss + sum(shadow_con_loss1) + sum(shadow_con_loss2) + subitizing_con_loss)
 
             loss = supervised_loss + consistency_loss
@@ -127,15 +99,9 @@ if __name__ == "__main__":
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            for ema_param, param in zip(ema_model.parameters(), model.parameters()):
+                ema_param.data.mul_(1-ema_decay).add_(param.data.mul_(ema_decay))
 
             iter_num = iter_num + 1
-            shadow_loss2_record.update(shadow_loss2[-1].item(), labeled_bs)
-            edge_loss_record.update(edge_loss.item(), labeled_bs)
-            shadow_con_loss2_record.update(shadow_con_loss2[-1].item(), batch_size-labeled_bs)
-            edge_con_loss_record.update(edge_con_loss.item(), batch_size-labeled_bs)
-            subitizing_loss_record.update(subitizing_loss, labeled_bs)
-
-            loss_record = 'iteration %d : shadow_f : %f5 , edge: %f5 , shadow_f_con: %f5  edge_con: %f5 loss_weight: %f5, lr: %f5' % \
-                          (iter_num, shadow_loss2_record.avg, edge_loss_record.avg, shadow_con_loss2_record.avg,edge_con_loss_record.avg, consistency_weight, optimizer.param_groups[0]['lr'])
 
     torch.save(model.state_dict(), "models/model.py")

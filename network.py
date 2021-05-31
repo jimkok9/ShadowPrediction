@@ -1,4 +1,3 @@
-import numpy as np
 import torch.nn.functional as F
 from resnext101_EF import ResNeXt101
 from torch import nn
@@ -92,7 +91,7 @@ class DFtoPred(nn.Module):
         pred3 = F.interpolate(self.predictions[3](DF[3]), sizeInput, mode='bilinear', align_corners=True)
         pred4 = F.interpolate(self.predictions[4](DF[4]), sizeInput, mode='bilinear', align_corners=True)
 
-        return [pred0, pred1, pred2, pred3, pred4]
+        return pred0, pred1, pred2, pred3, pred4
 
 class DFtoRF(nn.Module):
     def __init__(self):
@@ -127,7 +126,7 @@ class RFtoPred(nn.Module):
         pred3 = F.interpolate(self.predictions[3](RF[3]), sizeInput, mode='bilinear', align_corners=True)
         S_f = F.interpolate(self.predictions[4](RF[0] + RF[1] + RF[2] + RF[3]), sizeInput, mode='bilinear', align_corners=True)
 
-        return [pred0, pred1, pred2, pred3, S_f]
+        return pred0, pred1, pred2, pred3, S_f
 
 class MTMT(nn.Module):
     def __init__(self):
@@ -145,11 +144,11 @@ class MTMT(nn.Module):
         EF = self.convert(self.resNext(img))
         SC = self.EF5ToSC(EF[4])
         DF = self.EFtoDF(EF)
-        DFPred = self.DFtoPred(DF, size)
+        pred0, pred1, pred2, pred3, pred4 = self.DFtoPred(DF, size)
         RF = self.DFtoRF(DF)
-        RFPred = self.RFtoPred(RF, size)
-
-        return [DFPred[0]], DFPred, SC, [RFPred[4]]
+        RFpred0, RFpred1, RFpred2, RFpred3, RF_S_f = self.RFtoPred(RF, size)
+        shadows = [pred1, pred2, pred3, pred4, RFpred0, RFpred1, RFpred3]
+        return [pred0], shadows, SC, [RF_S_f]
 
 
 
