@@ -108,10 +108,8 @@ class DFtoPred(nn.Module):
             predictions.append(nn.Sequential(
                 nn.Conv2d(inputChannels, 64, 3, 1, 1), nn.Conv2d(64, 64, 3, 1, 1), nn.Conv2d(64, 16, 3, 1, 1), nn.Conv2d(16, 1, 1), nn.Sigmoid()
             ))
-        device = torch.device('cuda')
-        for p in predictions:
-            p.to(device)
-        self.predictions = predictions
+
+        self.predictions = nn.ModuleList(predictions)
 
     def forward(self, DF, sizeInput):
         pred0 = F.interpolate(self.predictions[0](DF[0]), sizeInput, mode='bilinear', align_corners=True)
@@ -196,10 +194,8 @@ class RFtoPred(nn.Module):
             predictions.append(nn.Sequential(
                 nn.Conv2d(32, 64, 3, 1, 1), nn.Conv2d(64, 64, 3, 1, 1), nn.Conv2d(64, 16, 3, 1, 1), nn.Conv2d(16, 1, 1), nn.Sigmoid()
             ))
-        device = torch.device('cuda')
-        for p in predictions:
-            p.to(device)
-        self.predictions = predictions
+
+        self.predictions = nn.ModuleList(predictions)
 
     def forward(self, RF, sizeInput):
         pred0 = F.interpolate(self.predictions[0](RF[0]), sizeInput, mode='bilinear', align_corners=True)

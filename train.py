@@ -80,10 +80,10 @@ def create_model():
     print("number of devices: " + str(torch.cuda.device_count()))
     print("cuda available: " + str(torch.cuda.is_available()))
     print("device: " + str(torch.cuda.current_device()))
-    net.to("cuda")
-    device = torch.device('cuda')
-    net = net.to(device)
-    # net_cuda.checkCuda()
+    # net.to("cuda")
+    # device = torch.device('cuda')
+    # net = net.to(device)
+    # # net_cuda.checkCuda()
     return net
 
 
