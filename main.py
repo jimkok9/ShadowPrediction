@@ -39,29 +39,64 @@ class EFtoDF(nn.Module):
                                       nn.Conv2d(ik[2], ik[2], ik[3], 1, ik[4]), nn.BatchNorm2d(ik[2]), nn.ReLU(inplace=True)))
 
         oneXoneConv = nn.Sequential(nn.Conv2d(64, 32, 1, 1, bias=False), nn.ReLU(inplace=True))
-
-        self.conv = conv
-        self.shortCon = shortConnections
+        # device = torch.device('cuda')
+        # for c in conv:
+        #     c.to(device)
+        # for s in shortConnections:
+        #     s.to(device)
+        self.conv = nn.ModuleList(conv)
+        self.shortCon = nn.ModuleList(shortConnections)
         self.oneXoneConv = oneXoneConv
 
-    def forward(self, EF):
-        DF5 = self.conv[4](EF[4])
+        #subitizing section
+        self.number_per_fc = nn.Linear(list_k[1][2], 1)  # 64->1
+        torch.nn.init.constant_(self.number_per_fc.weight, 0)
 
+        # self.shadow_score = nn.Conv2d(list_k[0][2], 1, 3, 1, 1)
+        self.shadow_score = nn.Sequential(
+            nn.Conv2d(list_k[1][2], list_k[1][2] // 4, 3, 1, 1), nn.BatchNorm2d(list_k[1][2] // 4),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.1), nn.Conv2d(list_k[1][2] // 4, 1, 1)
+        )
+        # self.edge_score = nn.Conv2d(list_k[0][2], 1, 3, 1, 1)
+        self.edge_score = nn.Sequential(
+            nn.Conv2d(list_k[0][2], list_k[0][2] // 4, 3, 1, 1), nn.BatchNorm2d(list_k[0][2] // 4),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.1), nn.Conv2d(list_k[0][2] // 4, 1, 1)
+        )
+
+    def forward(self, EF):
+        DFfeatures = []
+        DF5 = self.conv[4](EF[4])
+        vector = F.adaptive_avg_pool2d(DF5, output_size=1)
+        vector = vector.view(vector.size(0), -1)
+        up_subitizing = self.number_per_fc(vector)
+        shadowScores, edgeScores = [], []
+
+        DFfeatures.append(DF5)
+        shadowScores.append(self.shadow_score(DF5))
         EF5x2 = F.interpolate(EF[4], EF[3].size()[2:], mode='bilinear', align_corners=True)
         DF4 = self.conv[3](self.shortCon[0](torch.cat([EF5x2, EF[3]], dim=1)))
+        shadowScores.append(self.shadow_score(DF4))
+        DFfeatures.append(DF4)
 
         EF4x2 = F.interpolate(EF[3], EF[2].size()[2:], mode='bilinear', align_corners=True)
         EF5x4 = F.interpolate(EF[4], EF[2].size()[2:], mode='bilinear', align_corners=True)
         DF3 = self.conv[2](self.shortCon[1](torch.cat([EF4x2, EF5x4, EF[2]], dim=1)))
+        shadowScores.append(self.shadow_score(DF3))
+        DFfeatures.append(DF3)
 
         EF3x2 = F.interpolate(EF[2], EF[1].size()[2:], mode='bilinear', align_corners=True)
         EF4x4 = F.interpolate(EF[3], EF[1].size()[2:], mode='bilinear', align_corners=True)
         EF5x8 = F.interpolate(EF[4], EF[1].size()[2:], mode='bilinear', align_corners=True)
         DF2 = self.conv[1](self.shortCon[2](torch.cat([EF3x2, EF4x4, EF5x8, EF[1]], dim=1)))
-
-        DF1 = EF[0] + F.interpolate(self.oneXoneConv(DF5), EF[0].size()[2:], mode='bilinear', align_corners=True)
-
-        return [DF1, DF2, DF3, DF4, DF5]
+        DFfeatures.append(DF2)
+        shadowScores.append(self.shadow_score(DF2))
+        tmp = EF[0] + F.interpolate(self.oneXoneConv(DF5), EF[0].size()[2:], mode='bilinear', align_corners=True)
+        DF1 = self.conv[0](tmp)
+        DFfeatures.append(DF1)
+        edgeScores.append(self.edge_score(DF1))
+        return DFfeatures, up_subitizing, shadowScores, edgeScores
 
 class DFtoPred(nn.Module):
     def __init__(self):
@@ -72,6 +107,9 @@ class DFtoPred(nn.Module):
             predictions.append(nn.Sequential(
                 nn.Conv2d(inputChannels, 64, 3, 1, 1), nn.Conv2d(64, 64, 3, 1, 1), nn.Conv2d(64, 16, 3, 1, 1), nn.Conv2d(16, 1, 1), nn.Sigmoid()
             ))
+        device = torch.device('cuda')
+        for p in predictions:
+            p.to(device)
         self.predictions = predictions
 
     def forward(self, DF, sizeInput):
@@ -81,32 +119,90 @@ class DFtoPred(nn.Module):
         pred3 = F.interpolate(self.predictions[3](DF[3]), sizeInput, mode='bilinear', align_corners=True)
         pred4 = F.interpolate(self.predictions[4](DF[4]), sizeInput, mode='bilinear', align_corners=True)
 
+
+        # returning pred 0 = DF1 prediction and pred 4 = DF5 prediction
         return [pred0, pred1, pred2, pred3, pred4]
 
 class DFtoRF(nn.Module):
     def __init__(self):
         super(DFtoRF, self).__init__()
+        list_k = [[32], [64, 64, 64, 64]];
         oneXoneConvs = []
-        for i in range(0, 5):
-            oneXoneConvs.append(nn.Sequential(nn.Conv2d(64, 32, 1, 1, bias=False), nn.ReLU(inplace=True)))
-        self.oneXoneConvs = oneXoneConvs
+        up = []
+        tmp = []
+        tmp_up = []
+        feature_k = [[3, 1], [5, 2], [5, 2], [7, 3]]
+        for idx, j in enumerate(list_k[1]):
+            tmp.append(nn.Sequential(nn.Conv2d(64, 32, 1, 1, bias=False), nn.BatchNorm2d(32), nn.ReLU(inplace=True)))
+            tmp_up.append(
+                nn.Sequential(nn.Conv2d(32, 32, feature_k[idx][0], 1, feature_k[idx][1]), nn.BatchNorm2d(32),
+                              nn.ReLU(inplace=True),
+                              nn.Conv2d(32, 32, feature_k[idx][0], 1, feature_k[idx][1]), nn.BatchNorm2d(32),
+                              nn.ReLU(inplace=True),
+                              nn.Conv2d(32, 32, feature_k[idx][0], 1, feature_k[idx][1]), nn.BatchNorm2d(32),
+                              nn.ReLU(inplace=True)))
+        # oneXoneConvs.append(nn.ModuleList(tmp))
+        # up.append(nn.ModuleList(tmp))
+        self.oneXoneConvs = nn.ModuleList(tmp)
+        self.up = nn.ModuleList(tmp_up)
 
-    def forward(self, DF):
-        RF2 = DF[0] + F.interpolate(self.oneXoneConvs[0](DF[1]), DF[0].size()[2:], mode='bilinear', align_corners=True)
-        RF3 = DF[0] + F.interpolate(self.oneXoneConvs[1](DF[2]), DF[0].size()[2:], mode='bilinear', align_corners=True)
-        RF4 = DF[0] + F.interpolate(self.oneXoneConvs[2](DF[3]), DF[0].size()[2:], mode='bilinear', align_corners=True)
-        RF5 = DF[0] + F.interpolate(self.oneXoneConvs[3](DF[4]), DF[0].size()[2:], mode='bilinear', align_corners=True)
+        self.sub_score = nn.Sequential(
+            nn.Conv2d(list_k[0][0], list_k[0][0] // 4, 3, 1, 1), nn.BatchNorm2d(list_k[0][0] // 4), nn.ReLU(inplace=True),
+            nn.Dropout(0.1), nn.Conv2d(list_k[0][0] // 4, 1, 1)
+        )
 
-        return [RF2, RF3, RF4, RF5]
+        self.relu = nn.ReLU()
+
+    def forward(self, DF, sizeInput):
+        up_score = []
+        tmp_feature = []
+        print(DF[0].size())
+        print(DF[1].size())
+        print(DF[2].size())
+        print(DF[3].size())
+        print(DF[4].size())
+
+        RF2 = DF[4] + F.interpolate(self.oneXoneConvs[0](DF[3]), DF[4].size()[2:], mode='bilinear', align_corners=True)
+        tmp_f = self.up[0](RF2)
+        up_score.append(F.interpolate(self.sub_score(tmp_f), sizeInput, mode='bilinear', align_corners=True))
+        tmp_feature.append(tmp_f)
+
+        RF3 = DF[4] + F.interpolate(self.oneXoneConvs[1](DF[2]), DF[4].size()[2:], mode='bilinear', align_corners=True)
+        tmp_f = self.up[1](RF3)
+        up_score.append(F.interpolate(self.sub_score(tmp_f), sizeInput, mode='bilinear', align_corners=True))
+        tmp_feature.append(tmp_f)
+
+        RF4 = DF[4] + F.interpolate(self.oneXoneConvs[2](DF[1]), DF[4].size()[2:], mode='bilinear', align_corners=True)
+        tmp_f = self.up[2](RF4)
+        up_score.append(F.interpolate(self.sub_score(tmp_f), sizeInput, mode='bilinear', align_corners=True))
+        tmp_feature.append(tmp_f)
+
+        RF5 = DF[4] + F.interpolate(self.oneXoneConvs[3](DF[0]), DF[4].size()[2:], mode='bilinear', align_corners=True)
+        tmp_f = self.up[3](RF5)
+        up_score.append(F.interpolate(self.sub_score(tmp_f), sizeInput, mode='bilinear', align_corners=True))
+        tmp_feature.append(tmp_f)
+
+        tmp_fea = tmp_feature[0]
+        for i_fea in range(len(tmp_feature) - 1):
+            tmp_fea = self.relu(torch.add(tmp_fea, F.interpolate((tmp_feature[i_fea + 1]), tmp_feature[0].size()[2:],
+                                                                 mode='bilinear', align_corners=True)))
+        up_score.append(F.interpolate(self.sub_score(tmp_fea), sizeInput, mode='bilinear', align_corners=True))
+        # up_score.append(F.interpolate(self.final_score(tmp_fea), x_size, mode='bilinear', align_corners=True))
+
+        return up_score
 
 class RFtoPred(nn.Module):
     def __init__(self):
         super(RFtoPred, self).__init__()
         predictions = []
+
         for i in range(0, 5):
             predictions.append(nn.Sequential(
                 nn.Conv2d(32, 64, 3, 1, 1), nn.Conv2d(64, 64, 3, 1, 1), nn.Conv2d(64, 16, 3, 1, 1), nn.Conv2d(16, 1, 1), nn.Sigmoid()
             ))
+        device = torch.device('cuda')
+        for p in predictions:
+            p.to(device)
         self.predictions = predictions
 
     def forward(self, RF, sizeInput):
@@ -115,10 +211,10 @@ class RFtoPred(nn.Module):
         pred2 = F.interpolate(self.predictions[2](RF[2]), sizeInput, mode='bilinear', align_corners=True)
         pred3 = F.interpolate(self.predictions[3](RF[3]), sizeInput, mode='bilinear', align_corners=True)
         S_f = F.interpolate(self.predictions[4](RF[0] + RF[1] + RF[2] + RF[3]), sizeInput, mode='bilinear', align_corners=True)
-
+        #pred 0 = RF2 S_f = S_f
         return [pred0, pred1, pred2, pred3, S_f]
 
-class MTMT(nn.Module):
+class MTMT(nn.ModuleList):
     def __init__(self):
         super(MTMT, self).__init__()
         self.resNext = ResNeXt101()
@@ -129,15 +225,16 @@ class MTMT(nn.Module):
         self.RFtoPred = RFtoPred()
 
     def forward(self, img):
-        img = ToTensor()(img).unsqueeze(0)
+        # img = ToTensor()(img).unsqueeze(0)
         size = img.size()[2:]
         EF = self.convert(self.resNext(img))
-        DF = self.EFtoDF(EF)
-        DFPred = self.DFtoPred(DF, size)
-        RF = self.DFtoRF(DF)
-        RFPred = self.RFtoPred(RF, size)
+        DF, up_sabotizing, shadowScores, edgeScores = self.EFtoDF(EF)
+        #DFPred = self.DFtoPred(DF, size)
+        RFPred = self.DFtoRF(DF,size)
+        #RFPred = self.RFtoPred(RF, size)
 
-        return DFPred, RFPred
+        return edgeScores, shadowScores, up_sabotizing, RFPred
+
 
 
   #  plt.imshow(pred2[4].reshape(257, 257, 1).detach().numpy())

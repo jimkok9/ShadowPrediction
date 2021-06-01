@@ -5,31 +5,35 @@ import torch.utils.data as data
 from PIL import Image
 import torch
 import utils
+import random
+
+from utils.util import cal_subitizing
 
 NO_LABEL = -1
 
 def make_union_dataset(root, edge=False):
-    img_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'ShadowImages')) if f.endswith('.jpg')]
-    label_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'ShadowMasks')) if f.endswith('.png')]
+    print(root)
+    img_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages')) if f.endswith('.jpg')]
+    label_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowMasks')) if f.endswith('.png')]
     data_list = []
     if edge:
-        edge_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'EdgeMasks')) if f.endswith('.png')]
+        edge_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'SBUTrain4KRecoveredSmall\EdgeMasks')) if f.endswith('.png')]
         for img_name in img_list:
             if img_name in label_list:  # filter labeled data by seg label
             # if img_name in edge_list: # filter labeled data by edge label
-                data_list.append((os.path.join(root, 'ShadowImages', img_name + '.jpg'),
-                                  os.path.join(root, 'ShadowMasks', img_name + '.png'),
-                                 os.path.join(root, 'EdgeMasks', img_name + '.png')))
+                data_list.append((os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages', img_name + '.jpg'),
+                                  os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowMasks', img_name + '.png'),
+                                 os.path.join(root, 'SBUTrain4KRecoveredSmall\EdgeMasks', img_name + '.png')))
             else: # we set label=-1 when comes to unlebaled data
-                data_list.append((os.path.join(root, 'ShadowImages', img_name + '.jpg'), -1, -1))
+                data_list.append((os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages', img_name + '.jpg'), -1, -1))
     else:
         for img_name in img_list:
             if img_name in label_list:  # filter labeled data by seg label
             # if img_name in edge_list:  # filter labeled data by edge label
-                data_list.append((os.path.join(root, 'ShadowImages', img_name + '.jpg'),
-                                  os.path.join(root, 'ShadowMasks', img_name + '.png')))
+                data_list.append((os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages', img_name + '.jpg'),
+                                  os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowMasks', img_name + '.png')))
             else:  # we set label=-1 when comes to unlebaled data
-                data_list.append((os.path.join(root, 'ShadowImages', img_name + '.jpg'), -1))
+                data_list.append((os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages', img_name + '.jpg'), -1))
 
     return data_list
 
@@ -52,7 +56,7 @@ def make_labeled_dataset(root, edge=False):
 
 
 class SBU(data.Dataset):
-    def __init__(self, root, joint_transform=None, transform=None, target_transform=None, mod='union', subitizing=False, subitizing_threshold=8, subitizing_min_size_per=0.005, edge=False):
+    def __init__(self, root, joint_transform=None, transform=None, target_transform=None, mod='union', multi_task=True,  subitizing=False, subitizing_threshold=8, subitizing_min_size_per=0.005, edge=False):
         assert (mod in ['union', 'labeled'])
         self.root = root
         self.mod = mod
@@ -65,6 +69,7 @@ class SBU(data.Dataset):
         self.target_transform = target_transform
         self.edge = edge
         self.subitizing = subitizing
+        self.multi_task = multi_task
         # 8, 0.005
         self.subitizing_threshold = subitizing_threshold
         self.subitizing_min_size_per = subitizing_min_size_per
@@ -99,9 +104,10 @@ class SBU(data.Dataset):
             target = Image.open(gt_path).convert('L')
             #output subitizing knowledge for multi task learning
             if self.multi_task:
+
                 number_per, percentage = cal_subitizing(target, threshold=self.subitizing_threshold, min_size_per=self.subitizing_min_size_per)
                 number_per = torch.Tensor([number_per]) #to Tensor
-
+                print("number_per: " + str(number_per))
             if self.joint_transform is not None:
                 if self.edge:
                     edge = Image.open(edge_path).convert('L')
@@ -121,7 +127,7 @@ class SBU(data.Dataset):
             elif self.subitizing:
                 sample = {'image': img, 'label': target, 'number_per': number_per}
             elif self.edge:
-                sample = {'image': img, 'label': target, 'edge': edge}
+                sample = {'image': img, 'label': target, 'number_per': number_per, 'edge': edge}
             else:
                 sample = {'image': img, 'label': target}
         return sample
@@ -131,14 +137,22 @@ class SBU(data.Dataset):
 
 def relabel_dataset(dataset, edge_able=False):
     unlabeled_idxs = []
-    for idx in range(len(dataset.imgs)):
-        if not edge_able:
-            path, label = dataset.imgs[idx]
-        else:
-            path, label, edge = dataset.imgs[idx]
-        if label == -1:
-            unlabeled_idxs.append(idx)
+    size = len(dataset.imgs)
+    splitratio = 0.7
+    unlabeledNum = int(size * splitratio)
+    labeledNum = size - unlabeledNum
+    a_list = list(range(1, size))
+    random.seed(10)
+    unlabeled_idxs = random.sample(a_list, unlabeledNum)
+    # for idx in range(len(dataset.imgs)):
+    #     if not edge_able:
+    #         path, label = dataset.imgs[idx]
+    #     else:
+    #         path, label, edge = dataset.imgs[idx]
+    #     if label == -1:
+    #         unlabeled_idxs.append(idx)
     labeled_idxs = sorted(set(range(len(dataset.imgs))) - set(unlabeled_idxs))
 
     return labeled_idxs, unlabeled_idxs
+
 

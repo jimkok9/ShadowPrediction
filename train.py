@@ -16,21 +16,26 @@ import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 import torchvision.utils as vutils
-import utils
+import utils.losses as losses
+import utils.ramps as ramps
+from utils.util import AverageMeter, TwoStreamBatchSampler
 from main import MTMT
 from dataloaders.SBU import SBU, relabel_dataset
 from dataloaders import joint_transforms
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--root_path', type=str, default='/home/ext/chenzhihao/Datasets/SBU_USR_manShadow/union-Train', help='Name of Experiment')
+parser.add_argument('--root_path', type=str, default='C:/Users\idvin\Documents\computerVision\ShadowPrediction\SBU-shadow', help='Name of Experiment')
 parser.add_argument('--exp', type=str,  default='MTMT', help='model_name')
 parser.add_argument('--max_iterations', type=int,  default=10000, help='maximum epoch number to train')
-parser.add_argument('--batch_size', type=int, default=6, help='batch_size per gpu')
-parser.add_argument('--labeled_bs', type=int, default=4, help='labeled_batch_size per gpu')
+parser.add_argument('--batch_size', type=int, default=2, help='batch_size per gpu')
+parser.add_argument('--labeled_bs', type=int, default=1, help='labeled_batch_size per gpu')
 parser.add_argument('--base_lr', type=float,  default=0.005, help='maximum epoch number to train')
 parser.add_argument('--lr_decay', type=float,  default=0.9, help='learning rate decay')
 parser.add_argument('--edge', type=float, default='10', help='edge learning weight')
+parser.add_argument('--deterministic', type=int,  default=0, help='whether use deterministic training')
+parser.add_argument('--seed', type=int,  default=1337, help='random seed')
 parser.add_argument('--gpu', type=str,  default='1', help='GPU to use')
+### costs
 parser.add_argument('--ema_decay', type=float,  default=0.99, help='ema_decay')
 parser.add_argument('--consistency_type', type=str,  default="mse", help='consistency_type')
 parser.add_argument('--consistency', type=float,  default=1, help='consistency')
@@ -39,12 +44,19 @@ parser.add_argument('--scale', type=int,  default=416, help='batch size of 8 wit
 parser.add_argument('--subitizing', type=float,  default=1, help='subitizing loss weight')
 parser.add_argument('--repeat', type=int,  default=3, help='repeat')
 args = parser.parse_args()
-
+try:
+    torch.multiprocessing.set_start_method('spawn')
+except RuntimeError:
+    pass
 train_data_path = args.root_path
 tmp_path = 'tmp_see'
 if not os.path.exists(tmp_path):
     os.mkdir(tmp_path)
-
+print("---love--")
+print("number of devices: " + str(torch.cuda.device_count()))
+print("cuda available: " + str(torch.cuda.is_available()))
+print("device: " + str(torch.cuda.current_device()))
+print("---ueself--")
 os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 batch_size = args.batch_size * len(args.gpu.split(','))
 max_iterations = args.max_iterations
@@ -64,13 +76,27 @@ def get_current_consistency_weight(epoch):
 
 def create_model():
     net = MTMT()
-    net_cuda = net.cuda()
+    print("---begin---")
+    print("number of devices: " + str(torch.cuda.device_count()))
+    print("cuda available: " + str(torch.cuda.is_available()))
+    print("device: " + str(torch.cuda.current_device()))
+    net.to("cuda")
+    device = torch.device('cuda')
+    net = net.to(device)
+    # net_cuda.checkCuda()
+    return net
 
-    return net_cuda
 
 if __name__ == "__main__":
+    try:
+        torch.multiprocessing.set_start_method('spawn')
+    except RuntimeError:
+        pass
+    device = torch.device('cuda')
     model = create_model()
+    model = model.to(device)
     ema_model = create_model()
+    ema_model = ema_model.to(device)
 
     joint_transform = joint_transforms.Compose([
         joint_transforms.RandomHorizontallyFlip(),
@@ -86,13 +112,12 @@ if __name__ == "__main__":
     target_transform = transforms.ToTensor()
     to_pil = transforms.ToPILImage()
 
-    db_train = SBU(root=train_data_path, joint_transform=joint_transform, transform=img_transform, target_transform=target_transform, mod='union', multi_task=True, edge=True)
-
+    db_train = SBU(root=train_data_path, joint_transform=joint_transform, transform=img_transform, target_transform=target_transform, mod='union', edge=True)
     labeled_idxs, unlabeled_idxs = relabel_dataset(db_train, edge_able=True)
-    batch_sampler = utils.TwoStreamBatchSampler(labeled_idxs, unlabeled_idxs, batch_size, batch_size-labeled_bs)
-    def worker_init_fn(worker_id):
-        random.seed(args.seed+worker_id)
-    trainloader = DataLoader(db_train, batch_sampler=batch_sampler, num_workers=4, worker_init_fn=worker_init_fn)
+    batch_sampler = TwoStreamBatchSampler(labeled_idxs, unlabeled_idxs, batch_size, batch_size-labeled_bs)
+    # def worker_init_fn(worker_id):
+    #     random.seed(args.seed+worker_id)
+    trainloader = DataLoader(db_train, batch_sampler=batch_sampler, num_workers=0, pin_memory=True)
 
     model.train()
     ema_model.train()
@@ -107,8 +132,8 @@ if __name__ == "__main__":
 
 
     if args.consistency_type == 'mse':
-        # consistency_criterion = losses.softmax_mse_loss
-        consistency_criterion = utils.losses.sigmoid_mse_loss
+        consistency_criterion = losses.softmax_mse_loss
+        # consistency_criterion = utils.losses.sigmoid_mse_loss
     elif args.consistency_type == 'kl':
         # consistency_criterion = losses.softmax_kl_loss
         consistency_criterion = F.kl_div
@@ -120,39 +145,51 @@ if __name__ == "__main__":
     iter_num = 0
     max_epoch = max_iterations//len(trainloader)+1
     lr_ = base_lr
+    print("training beginining")
     model.train()
-    for epoch_num in tqdm(range(max_epoch), ncols=70):
+    for epoch_num in range(max_epoch):
+
         time1 = time.time()
-        shadow_loss2_record, shadow_con_loss2_record, edge_loss_record, edge_con_loss_record = utils.AverageMeter(), utils.AverageMeter(), utils.AverageMeter(), utils.AverageMeter()
-        subitizing_loss_record = utils.AverageMeter()
+        shadow_loss2_record, shadow_con_loss2_record, edge_loss_record, edge_con_loss_record = AverageMeter(), AverageMeter(), AverageMeter(), AverageMeter()
+        subitizing_loss_record = AverageMeter()
         # loss2_h2l_record, loss3_h2l_record, loss4_h2l_record = AverageMeter(), AverageMeter(), AverageMeter()
         # loss1_l2h_record, loss2_l2h_record, loss3_l2h_record = AverageMeter(), AverageMeter(), AverageMeter()
         # loss4_l2h_record, consistency_record = AverageMeter(), AverageMeter()
+        print("---before--")
+        print("number of devices: " + str(torch.cuda.device_count()))
+        print("cuda available: " + str(torch.cuda.is_available()))
+        print("device: " + str(torch.cuda.current_device()))
+        print("---trainloader--")
+        print("epoch number: " + str(epoch_num))
         for i_batch, sampled_batch in enumerate(trainloader):
+            print("batch num: " + str(i_batch))
             time2 = time.time()
             optimizer.param_groups[0]['lr'] = 2 * base_lr * (1 - float(iter_num) / max_iterations
                                                              ) ** lr_decay
             optimizer.param_groups[1]['lr'] = base_lr * (1 - float(iter_num) / max_iterations
                                                          ) ** lr_decay
             # print('fetch data cost {}'.format(time2-time1))
+            device = torch.device('cuda')
             image_batch, label_batch, edge_batch, number_per_batch = sampled_batch['image'], sampled_batch['label'], sampled_batch['edge'], sampled_batch['number_per']
-            image_batch, label_batch, edge_batch, number_per_batch = image_batch.cuda(), label_batch.cuda(), edge_batch.cuda(), number_per_batch.cuda()
-
+            image_batch, label_batch, edge_batch, number_per_batch = image_batch.to(device), label_batch.to(device), edge_batch.to(device), number_per_batch.to(device)
             noise = torch.clamp(torch.randn_like(image_batch) * 0.1, -0.2, 0.2)
             ema_inputs = image_batch + noise
+            ema_inputs = ema_inputs.to(device)
             up_edge, up_shadow, up_subitizing, up_shadow_final = model(image_batch)
             with torch.no_grad():
                 up_edge_ema, up_shadow_ema, up_subitizing_ema, up_shadow_final_ema = ema_model(ema_inputs)
 
             ## calculate the loss
             ## subitizing loss
-            subitizing_loss = utils.losses.sigmoid_mse_loss(up_subitizing[:labeled_bs], number_per_batch[:labeled_bs])
-            subitizing_con_loss = utils.losses.sigmoid_mse_loss(up_subitizing[labeled_bs:], up_subitizing_ema[labeled_bs:])
+            subitizing_loss = losses.sigmoid_mse_loss(up_subitizing[:labeled_bs], number_per_batch[:labeled_bs])
+            subitizing_con_loss = losses.sigmoid_mse_loss(up_subitizing[labeled_bs:], up_subitizing_ema[labeled_bs:])
             ## edge loss
             edge_loss = []
             edge_con_loss = []
             for (ix, ix_ema) in zip(up_edge, up_edge_ema):
-                edge_loss.append(utils.losses.bce2d_new(ix[:labeled_bs], edge_batch[:labeled_bs], reduction='mean'))
+                print(ix[:labeled_bs].size())
+                print(edge_batch[:labeled_bs].size())
+                edge_loss.append(losses.bce2d_new(ix[:labeled_bs], edge_batch[:labeled_bs], reduction='mean'))
                 edge_con_loss.append(consistency_criterion(ix[labeled_bs:], ix_ema[labeled_bs:]))
             edge_loss = sum(edge_loss)
             edge_con_loss = sum(edge_con_loss)
