@@ -18,7 +18,7 @@ from dataloaders import joint_transforms
 train_data_path = 'C:/Users/Jim Kok/Desktop/SBU-shadow/SBUTrain4KRecoveredSmall'
 scale = 416
 batch_size = 3
-max_iterations = 10000
+max_iterations = 1000
 lr_decay = float(0.9)
 base_lr = float(0.005)
 labeled_bs = 2
@@ -115,4 +115,4 @@ if __name__ == "__main__":
                 break
 
 
-    torch.save(model.state_dict(), "models/model.py")
+    torch.save(model.state_dict(), "models/model.pth")
