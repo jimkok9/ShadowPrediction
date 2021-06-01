@@ -65,7 +65,7 @@ class EFtoDF(nn.Module):
             nn.Dropout(0.1), nn.Conv2d(list_k[0][2] // 4, 1, 1)
         )
 
-    def forward(self, EF):
+    def forward(self, EF, size):
         DFfeatures = []
         DF5 = self.conv[4](EF[4])
         vector = F.adaptive_avg_pool2d(DF5, output_size=1)
@@ -74,16 +74,16 @@ class EFtoDF(nn.Module):
         shadowScores, edgeScores = [], []
 
         DFfeatures.append(DF5)
-        shadowScores.append(self.shadow_score(DF5))
+        shadowScores.append(F.interpolate(self.shadow_score(DF5), size, mode='bilinear', align_corners=True))
         EF5x2 = F.interpolate(EF[4], EF[3].size()[2:], mode='bilinear', align_corners=True)
         DF4 = self.conv[3](self.shortCon[0](torch.cat([EF5x2, EF[3]], dim=1)))
-        shadowScores.append(self.shadow_score(DF4))
+        shadowScores.append(F.interpolate(self.shadow_score(DF4), size, mode='bilinear', align_corners=True))
         DFfeatures.append(DF4)
 
         EF4x2 = F.interpolate(EF[3], EF[2].size()[2:], mode='bilinear', align_corners=True)
         EF5x4 = F.interpolate(EF[4], EF[2].size()[2:], mode='bilinear', align_corners=True)
         DF3 = self.conv[2](self.shortCon[1](torch.cat([EF4x2, EF5x4, EF[2]], dim=1)))
-        shadowScores.append(self.shadow_score(DF3))
+        shadowScores.append(F.interpolate(self.shadow_score(DF3), size, mode='bilinear', align_corners=True))
         DFfeatures.append(DF3)
 
         EF3x2 = F.interpolate(EF[2], EF[1].size()[2:], mode='bilinear', align_corners=True)
@@ -91,11 +91,12 @@ class EFtoDF(nn.Module):
         EF5x8 = F.interpolate(EF[4], EF[1].size()[2:], mode='bilinear', align_corners=True)
         DF2 = self.conv[1](self.shortCon[2](torch.cat([EF3x2, EF4x4, EF5x8, EF[1]], dim=1)))
         DFfeatures.append(DF2)
-        shadowScores.append(self.shadow_score(DF2))
+
+        shadowScores.append(F.interpolate(self.shadow_score(DF2), size, mode='bilinear', align_corners=True))
         tmp = EF[0] + F.interpolate(self.oneXoneConv(DF5), EF[0].size()[2:], mode='bilinear', align_corners=True)
         DF1 = self.conv[0](tmp)
         DFfeatures.append(DF1)
-        edgeScores.append(self.edge_score(DF1))
+        edgeScores.append(F.interpolate(self.edge_score(DF1), size, mode='bilinear', align_corners=True))
         return DFfeatures, up_subitizing, shadowScores, edgeScores
 
 class DFtoPred(nn.Module):
@@ -156,11 +157,6 @@ class DFtoRF(nn.Module):
     def forward(self, DF, sizeInput):
         up_score = []
         tmp_feature = []
-        print(DF[0].size())
-        print(DF[1].size())
-        print(DF[2].size())
-        print(DF[3].size())
-        print(DF[4].size())
 
         RF2 = DF[4] + F.interpolate(self.oneXoneConvs[0](DF[3]), DF[4].size()[2:], mode='bilinear', align_corners=True)
         tmp_f = self.up[0](RF2)
@@ -228,7 +224,7 @@ class MTMT(nn.ModuleList):
         # img = ToTensor()(img).unsqueeze(0)
         size = img.size()[2:]
         EF = self.convert(self.resNext(img))
-        DF, up_sabotizing, shadowScores, edgeScores = self.EFtoDF(EF)
+        DF, up_sabotizing, shadowScores, edgeScores = self.EFtoDF(EF, size)
         #DFPred = self.DFtoPred(DF, size)
         RFPred = self.DFtoRF(DF,size)
         #RFPred = self.RFtoPred(RF, size)

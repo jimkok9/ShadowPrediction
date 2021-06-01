@@ -56,7 +56,7 @@ def make_labeled_dataset(root, edge=False):
 
 
 class SBU(data.Dataset):
-    def __init__(self, root, joint_transform=None, transform=None, target_transform=None, mod='union', multi_task=True,  subitizing=False, subitizing_threshold=8, subitizing_min_size_per=0.005, edge=False):
+    def __init__(self, root, joint_transform=None, transform=None, target_transform=None, mod='union', multi_task=True, subitizing=True, subitizing_threshold=8, subitizing_min_size_per=0.005, edge=True):
         assert (mod in ['union', 'labeled'])
         self.root = root
         self.mod = mod
@@ -83,8 +83,9 @@ class SBU(data.Dataset):
             img_path, gt_path = self.imgs[index]
         img = Image.open(img_path).convert('RGB')
         if gt_path == -1: #unlabeled data
+            print(self.imgs[index])
             if self.joint_transform is not None:
-                img = self.joint_transform(img)
+                img,_,_ = self.joint_transform(img, img, img)
             if self.transform is not None:
                 img = self.transform(img)
             target = torch.zeros((img.shape[1], img.shape[2])).unsqueeze(0) #fake label to make sure pytorch inner check
@@ -137,22 +138,14 @@ class SBU(data.Dataset):
 
 def relabel_dataset(dataset, edge_able=False):
     unlabeled_idxs = []
-    size = len(dataset.imgs)
-    splitratio = 0.7
-    unlabeledNum = int(size * splitratio)
-    labeledNum = size - unlabeledNum
-    a_list = list(range(1, size))
-    random.seed(10)
-    unlabeled_idxs = random.sample(a_list, unlabeledNum)
-    # for idx in range(len(dataset.imgs)):
-    #     if not edge_able:
-    #         path, label = dataset.imgs[idx]
-    #     else:
-    #         path, label, edge = dataset.imgs[idx]
-    #     if label == -1:
-    #         unlabeled_idxs.append(idx)
+    for idx in range(len(dataset.imgs)):
+        if not edge_able:
+            path, label = dataset.imgs[idx]
+        else:
+            path, label, edge = dataset.imgs[idx]
+        if label == -1:
+            unlabeled_idxs.append(idx)
     labeled_idxs = sorted(set(range(len(dataset.imgs))) - set(unlabeled_idxs))
 
     return labeled_idxs, unlabeled_idxs
-
 

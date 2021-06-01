@@ -72,7 +72,7 @@ num_classes = 2
 
 def get_current_consistency_weight(epoch):
     # Consistency ramp-up from https://arxiv.org/abs/1610.02242
-    return args.consistency * utils.ramps.sigmoid_rampup(epoch, args.consistency_rampup)
+    return args.consistency * ramps.sigmoid_rampup(epoch, args.consistency_rampup)
 
 def create_model():
     net = MTMT()
@@ -175,9 +175,20 @@ if __name__ == "__main__":
             noise = torch.clamp(torch.randn_like(image_batch) * 0.1, -0.2, 0.2)
             ema_inputs = image_batch + noise
             ema_inputs = ema_inputs.to(device)
+
+            print("the batches m8")
+            print(image_batch.size())
+            print(ema_inputs.size())
+            print("the batches ")
+
             up_edge, up_shadow, up_subitizing, up_shadow_final = model(image_batch)
             with torch.no_grad():
                 up_edge_ema, up_shadow_ema, up_subitizing_ema, up_shadow_final_ema = ema_model(ema_inputs)
+
+            print("output sizes m8")
+            print(up_edge[0].size())
+            print(up_edge_ema[0].size())
+            print("the outputs")
 
             ## calculate the loss
             ## subitizing loss
@@ -187,8 +198,9 @@ if __name__ == "__main__":
             edge_loss = []
             edge_con_loss = []
             for (ix, ix_ema) in zip(up_edge, up_edge_ema):
-                print(ix[:labeled_bs].size())
-                print(edge_batch[:labeled_bs].size())
+                print(ix.size())
+                print(edge_batch.size())
+                print(labeled_bs)
                 edge_loss.append(losses.bce2d_new(ix[:labeled_bs], edge_batch[:labeled_bs], reduction='mean'))
                 edge_con_loss.append(consistency_criterion(ix[labeled_bs:], ix_ema[labeled_bs:]))
             edge_loss = sum(edge_loss)
@@ -198,6 +210,7 @@ if __name__ == "__main__":
             shadow_con_loss1 = []
             shadow_con_loss2 = []
             for (ix, ix_ema) in zip(up_shadow, up_shadow_ema):
+                print(len)
                 shadow_loss1.append(F.binary_cross_entropy_with_logits(ix[:labeled_bs], label_batch[:labeled_bs], reduction='mean'))
                 shadow_con_loss1.append(consistency_criterion(ix[labeled_bs:], ix_ema[labeled_bs:]))
 
