@@ -7,44 +7,32 @@ import os
 from Utils.util import crf_refine
 
 
-def test_all_case(net, image_list, num_classes=1, save_result=True, test_save_path=None, trans_scale=416, GT_access=True):
+def test_all_case(net, image_list, num_classes=2, save_result=True, test_save_path=None, trans_scale=416, GT_access=True):
     img_transform = transforms.Compose([
         transforms.Resize((trans_scale, trans_scale)),
         transforms.ToTensor(),
     ])
     to_pil = transforms.ToPILImage()
     TP, TN, Np, Nn = 0, 0, 0, 0
-    Jaccard = 0
     ber_mean = 0
-    iter = 0
     for (img_path, target_path) in tqdm(image_list):
         print(img_path)
-        print(target_path)
+        img_name = img_path.split("/")[-1]
         img = Image.open(img_path).convert('RGB')
         w, h = img.size
         img_var = img_transform(img).unsqueeze(0).cuda()
-        up_edge, up_shadow, up_subitizing, up_shadow_final = net(img_var) #subitizin
-
-        # resized image crf
-        print(torch.mean(up_shadow_final[-1]))
+        up_edge, up_shadow, up_subitizing, up_shadow_final = net(img_var)
 
         prediction = np.array(to_pil(up_shadow_final[-1].data.squeeze(0).cpu()))
+        prediction = np.uint8(prediction>=127.5)*255 # trick just for SBU
         prediction = crf_refine(np.array(img.convert('RGB').resize((trans_scale, trans_scale))), prediction)
         prediction = np.array(transforms.Resize((h, w))(Image.fromarray(prediction.astype('uint8')).convert('L')))
-        print(prediction.mean())
+
         # cal metric
         if GT_access:
             target = np.array(Image.open(target_path).convert('L'))
             TP_single, TN_single, Np_single, Nn_single, Union = cal_acc(prediction, target)
-            '''
-            Calculate Jaccard 
-            '''
-            # Jaccard = (Jaccard*iter + TP_single / Union) / (iter+1)
-            # iter = iter + 1
-            # print("Current Jaccard is {}".format(Jaccard))
-            '''
-            Calculate BER 
-            '''
+            ''' Calculate BER '''
             TP = TP + TP_single
             TN = TN + TN_single
             Np = Np + Np_single
@@ -53,16 +41,14 @@ def test_all_case(net, image_list, num_classes=1, save_result=True, test_save_pa
             ber_unshadow = (1 - TN / Nn) * 100
             ber_mean = 0.5 * (2 - TP / Np - TN / Nn) * 100
             print("Current ber is {}, shadow_ber is {}, unshadow ber is {}".format(ber_mean, ber_shadow, ber_unshadow))
-        '''
-        Save prediction
-        '''
+        '''Save prediction'''
         if save_result:
             Image.fromarray(prediction).save(os.path.join(test_save_path, img_name[:-4]+'.png'), "PNG")
 
-    return Jaccard
+    return ber_mean, ber_shadow, ber_unshadow
 
-def cal_acc(prediction, label, thr = 128):
-    prediction = (prediction > thr)
+def cal_acc(prediction, label, thr = 127.5):
+    prediction = (np.uint8(prediction) > thr)
     label = (label > thr)
     prediction_tmp = prediction.astype(np.float)
     label_tmp = label.astype(np.float)

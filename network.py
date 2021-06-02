@@ -80,16 +80,16 @@ class DFtoPred(nn.Module):
         for i in range(0, 5):
             inputChannels = 32 if i==0 else 64
             predictions.append(nn.Sequential(
-                nn.Conv2d(inputChannels, 64, 3, 1, 1), nn.Conv2d(64, 64, 3, 1, 1), nn.Conv2d(64, 16, 3, 1, 1), nn.Conv2d(16, 1, 1), nn.Sigmoid()
+                nn.Conv2d(inputChannels, 64, 3, 1, 1), nn.Conv2d(64, 64, 3, 1, 1), nn.Conv2d(64, 16, 3, 1, 1), nn.Conv2d(16, 1, 1)
             ))
         self.predictions = nn.ModuleList(predictions)
 
     def forward(self, DF, sizeInput):
-        pred0 = F.interpolate(self.predictions[0](DF[0]), sizeInput, mode='bilinear', align_corners=True)
-        pred1 = F.interpolate(self.predictions[1](DF[1]), sizeInput, mode='bilinear', align_corners=True)
-        pred2 = F.interpolate(self.predictions[2](DF[2]), sizeInput, mode='bilinear', align_corners=True)
-        pred3 = F.interpolate(self.predictions[3](DF[3]), sizeInput, mode='bilinear', align_corners=True)
-        pred4 = F.interpolate(self.predictions[4](DF[4]), sizeInput, mode='bilinear', align_corners=True)
+        pred0 = F.interpolate(torch.sigmoid(self.predictions[0](DF[0])), sizeInput, mode='bilinear', align_corners=True)
+        pred1 = F.interpolate(torch.sigmoid(self.predictions[1](DF[1])), sizeInput, mode='bilinear', align_corners=True)
+        pred2 = F.interpolate(torch.sigmoid(self.predictions[2](DF[2])), sizeInput, mode='bilinear', align_corners=True)
+        pred3 = F.interpolate(torch.sigmoid(self.predictions[3](DF[3])), sizeInput, mode='bilinear', align_corners=True)
+        pred4 = F.interpolate(torch.sigmoid(self.predictions[4](DF[4])), sizeInput, mode='bilinear', align_corners=True)
 
         return pred0, pred1, pred2, pred3, pred4
 
@@ -115,16 +115,16 @@ class RFtoPred(nn.Module):
         predictions = []
         for i in range(0, 5):
             predictions.append(nn.Sequential(
-                nn.Conv2d(32, 64, 3, 1, 1), nn.Conv2d(64, 64, 3, 1, 1), nn.Conv2d(64, 16, 3, 1, 1), nn.Conv2d(16, 1, 1), nn.Sigmoid()
+                nn.Conv2d(32, 64, 3, 1, 1), nn.Conv2d(64, 64, 3, 1, 1), nn.Conv2d(64, 16, 3, 1, 1), nn.Conv2d(16, 1, 1)
             ))
         self.predictions = nn.ModuleList(predictions)
 
     def forward(self, RF, sizeInput):
-        pred0 = F.interpolate(self.predictions[0](RF[0]), sizeInput, mode='bilinear', align_corners=True)
-        pred1 = F.interpolate(self.predictions[1](RF[1]), sizeInput, mode='bilinear', align_corners=True)
-        pred2 = F.interpolate(self.predictions[2](RF[2]), sizeInput, mode='bilinear', align_corners=True)
-        pred3 = F.interpolate(self.predictions[3](RF[3]), sizeInput, mode='bilinear', align_corners=True)
-        S_f = F.interpolate(self.predictions[4](RF[0] + RF[1] + RF[2] + RF[3]), sizeInput, mode='bilinear', align_corners=True)
+        pred0 = F.interpolate(torch.sigmoid(self.predictions[0](RF[0])), sizeInput, mode='bilinear', align_corners=True)
+        pred1 = F.interpolate(torch.sigmoid(self.predictions[1](RF[1])), sizeInput, mode='bilinear', align_corners=True)
+        pred2 = F.interpolate(torch.sigmoid(self.predictions[2](RF[2])), sizeInput, mode='bilinear', align_corners=True)
+        pred3 = F.interpolate(torch.sigmoid(self.predictions[3](RF[3])), sizeInput, mode='bilinear', align_corners=True)
+        S_f = F.interpolate(torch.sigmoid(self.predictions[4](RF[0] + RF[1] + RF[2] + RF[3])), sizeInput, mode='bilinear', align_corners=True)
 
         return pred0, pred1, pred2, pred3, S_f
 

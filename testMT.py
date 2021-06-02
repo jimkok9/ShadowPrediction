@@ -4,14 +4,14 @@ from network import MTMT
 from test_MT_util import test_all_case
 
 root_path = 'C:/Users/Jim Kok/Desktop/SBU-shadow/SBUTrain4KRecoveredSmall'
-snapshot_path = 'models/SBU.pth'
+snapshot_path = 'models/SBUAdjusted.pth'
 test_save_path = 'C:/Users/Jim Kok/Desktop/save/prediction'
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 scale = 416
 if not os.path.exists(test_save_path):
     os.makedirs(test_save_path)
-num_classes = 1
+num_classes = 2
 
 img_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root_path, 'ShadowImages')) if f.endswith('.jpg')]
 data_path = [(os.path.join(root_path, 'ShadowImages', img_name + '.jpg'),
@@ -24,7 +24,7 @@ def test_calculate_metric():
     net.eval()
 
     avg_metric = test_all_case(net, data_path, num_classes=num_classes,
-                               save_result=False, test_save_path=test_save_path, trans_scale=scale)
+                               save_result=True, test_save_path=test_save_path, trans_scale=scale)
 
     return avg_metric
 
