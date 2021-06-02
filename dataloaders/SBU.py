@@ -4,7 +4,7 @@ import os.path
 import torch.utils.data as data
 from PIL import Image
 import torch
-import Utils
+import utils
 
 NO_LABEL = -1
 
@@ -100,7 +100,7 @@ class SBU(data.Dataset):
             target = Image.open(gt_path).convert('L')
             #output subitizing knowledge for multi task learning
             if self.multi_task:
-                number_per, percentage = Utils.util.cal_subitizing(target, threshold=self.subitizing_threshold, min_size_per=self.subitizing_min_size_per)
+                number_per, percentage = utils.util.cal_subitizing(target, threshold=self.subitizing_threshold, min_size_per=self.subitizing_min_size_per)
                 number_per = torch.Tensor([number_per]) #to Tensor
 
             if self.joint_transform is not None:

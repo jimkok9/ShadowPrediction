@@ -19,16 +19,16 @@ from torchvision.utils import make_grid
 import torchvision.utils as vutils
 
 from MTMT import build_model
-from Utils import ramps, losses
+from utils import ramps, losses
 from dataloaders.SBU import SBU, relabel_dataset
 from dataloaders import joint_transforms
-from Utils.util import AverageMeter, TwoStreamBatchSampler
+from utils.util import AverageMeter, TwoStreamBatchSampler
 parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str, default='C:/Users/Jim Kok/Desktop/SBU-shadow/SBUTrain4KRecoveredSmall', help='Name of Experiment')
 parser.add_argument('--exp', type=str,  default='MTMT', help='model_name')
 parser.add_argument('--max_iterations', type=int,  default=10000, help='maximum epoch number to train')
-parser.add_argument('--batch_size', type=int, default=6, help='batch_size per gpu')
-parser.add_argument('--labeled_bs', type=int, default=4, help='labeled_batch_size per gpu')
+parser.add_argument('--batch_size', type=int, default=2, help='batch_size per gpu')
+parser.add_argument('--labeled_bs', type=int, default=1, help='labeled_batch_size per gpu')
 parser.add_argument('--base_lr', type=float,  default=0.005, help='maximum epoch number to train')
 parser.add_argument('--lr_decay', type=float,  default=0.9, help='learning rate decay')
 parser.add_argument('--edge', type=float, default='10', help='edge learning weight')
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     logging.info(str(args))
 
     model = create_model()
-    ema_model = create_model(ema=True)
+    # ema_model = create_model(ema=True)
 
     joint_transform = joint_transforms.Compose([
         joint_transforms.RandomHorizontallyFlip(),
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     trainloader = DataLoader(db_train, batch_sampler=batch_sampler)
 
     model.train()
-    ema_model.train()
+    # ema_model.train()
     # ema_model.eval()
     # optimizer = optim.SGD(model.parameters(), lr=base_lr, momentum=0.9, weight_decay=0.0001)
     optimizer = optim.SGD([
