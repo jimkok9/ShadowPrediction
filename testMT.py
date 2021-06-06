@@ -4,7 +4,7 @@ from network import MTMT
 from test_MT_util import test_all_case
 
 root_path = 'C:/Users/Jim Kok/Desktop/SBU-shadow/SBUTrain4KRecoveredSmall'
-snapshot_path = 'models/SBUAdjusted.pth'
+snapshot_path = 'models/SBU10000Final.pth'
 test_save_path = 'C:/Users/Jim Kok/Desktop/save/prediction'
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 

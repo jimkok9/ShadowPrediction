@@ -13,7 +13,7 @@ img_transform = transforms.Compose([
 
 if __name__ == "__main__":
     net = MTMT().cuda()
-    net.load_state_dict(torch.load("models/SBUAdjusted.pth"))
+    net.load_state_dict(torch.load("models/SBU10000Final.pth"))
 
     img = Image.open("C:/Users/Jim Kok/Desktop/SBU-shadow/SBUTrain4KRecoveredSmall\ShadowImages\lssd7.jpg").convert('RGB')
     w, h = img.size
