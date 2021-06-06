@@ -121,6 +121,18 @@ if __name__ == "__main__":
                                   padding=0)
                 vutils.save_image(up_shadow_final_ema[-1].data, 'record2/iter%d-e_predict_f.jpg' % iter_num, normalize=True,
                                   padding=0)
+            if iter_num % 7000 == 0:
+                torch.save(model.state_dict(), "models/SBU7000Final.pth")
+            if iter_num % 7500 == 0:
+                torch.save(model.state_dict(), "models/SBU7500Final.pth")
+            if iter_num % 8000 == 0:
+                torch.save(model.state_dict(), "models/SBU8000Final.pth")
+            if iter_num % 8500 == 0:
+                torch.save(model.state_dict(), "models/SBU8500Final.pth")
+            if iter_num % 9000 == 0:
+                torch.save(model.state_dict(), "models/SBU9000Final.pth")
+            if iter_num % 9500 == 0:
+                torch.save(model.state_dict(), "models/SBU9500Final.pth")
 
             iter_num = iter_num + 1
 
@@ -129,4 +141,4 @@ if __name__ == "__main__":
         if iter_num > max_iterations:
             break
 
-    torch.save(model.state_dict(), "models/SBUFinal.pth")
+    torch.save(model.state_dict(), "models/SBU10000Final.pth")
