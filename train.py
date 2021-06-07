@@ -24,11 +24,14 @@ from dataloaders.SBU import SBU, relabel_dataset
 from dataloaders import joint_transforms
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--root_path', type=str, default='C:/Users\idvin\Documents\computerVision\ShadowPrediction\SBU-shadow', help='Name of Experiment')
+#rootPath = 'C:/Users\idvin\Documents\computerVision\ShadowPrediction\SBU-shadow'
+#rootPath = 'C:/Users/idvin/Documents/computerVision/ShadowPrediction/UCF'
+rootPath = 'D:/ISTD_Dataset/train'
+parser.add_argument('--root_path', type=str, default=rootPath, help='Name of Experiment')
 parser.add_argument('--exp', type=str,  default='MTMT', help='model_name')
 parser.add_argument('--max_iterations', type=int,  default=10000, help='maximum epoch number to train')
 parser.add_argument('--batch_size', type=int, default=2, help='batch_size per gpu')
-parser.add_argument('--labeled_bs', type=int, default=1, help='labeled_batch_size per gpu')
+parser.add_argument('--labeled_bs', type=int, default=2, help='labeled_batch_size per gpu')
 parser.add_argument('--base_lr', type=float,  default=0.005, help='maximum epoch number to train')
 parser.add_argument('--lr_decay', type=float,  default=0.9, help='learning rate decay')
 parser.add_argument('--edge', type=float, default='10', help='edge learning weight')
@@ -95,8 +98,8 @@ if __name__ == "__main__":
     device = torch.device('cuda')
     model = create_model()
     model = model.to(device)
-    ema_model = create_model()
-    ema_model = ema_model.to(device)
+    # ema_model = create_model()
+    # ema_model = ema_model.to(device)
 
     joint_transform = joint_transforms.Compose([
         joint_transforms.RandomHorizontallyFlip(),
@@ -120,7 +123,7 @@ if __name__ == "__main__":
     trainloader = DataLoader(db_train, batch_sampler=batch_sampler, num_workers=0, pin_memory=True)
 
     model.train()
-    ema_model.train()
+    # ema_model.train()
     # ema_model.eval()
     # optimizer = optim.SGD(model.parameters(), lr=base_lr, momentum=0.9, weight_decay=0.0001)
     optimizer = optim.SGD([
@@ -147,8 +150,13 @@ if __name__ == "__main__":
     lr_ = base_lr
     print("training beginining")
     model.train()
-    for epoch_num in range(max_epoch):
 
+    csv_line = 'iteration,shadow,edge,subitizing,shadow_f_con,edge_con,loss_weight, lr'
+    with open('record/loss_rate_MTMT.txt', 'a+') as f:
+        f.write(str(csv_line) + '\r\n')
+
+    for epoch_num in range(max_epoch):
+        torch.cuda.empty_cache()
         time1 = time.time()
         shadow_loss2_record, shadow_con_loss2_record, edge_loss_record, edge_con_loss_record = AverageMeter(), AverageMeter(), AverageMeter(), AverageMeter()
         subitizing_loss_record = AverageMeter()
@@ -161,7 +169,9 @@ if __name__ == "__main__":
         print("device: " + str(torch.cuda.current_device()))
         print("---trainloader--")
         print("epoch number: " + str(epoch_num))
+
         for i_batch, sampled_batch in enumerate(trainloader):
+            torch.cuda.empty_cache()
             print("batch num: " + str(i_batch))
             time2 = time.time()
             optimizer.param_groups[0]['lr'] = 2 * base_lr * (1 - float(iter_num) / max_iterations
@@ -173,58 +183,62 @@ if __name__ == "__main__":
             image_batch, label_batch, edge_batch, number_per_batch = sampled_batch['image'], sampled_batch['label'], sampled_batch['edge'], sampled_batch['number_per']
             image_batch, label_batch, edge_batch, number_per_batch = image_batch.to(device), label_batch.to(device), edge_batch.to(device), number_per_batch.to(device)
             noise = torch.clamp(torch.randn_like(image_batch) * 0.1, -0.2, 0.2)
-            ema_inputs = image_batch + noise
-            ema_inputs = ema_inputs.to(device)
+            # ema_inputs = image_batch + noise
+            # ema_inputs = ema_inputs.to(device)
 
-            print("the batches m8")
-            print(image_batch.size())
-            print(ema_inputs.size())
-            print("the batches ")
+            # print("the batches m8")
+            # print(image_batch.size())
+            # print(ema_inputs.size())
+            # print("the batches ")
 
             up_edge, up_shadow, up_subitizing, up_shadow_final = model(image_batch)
-            with torch.no_grad():
-                up_edge_ema, up_shadow_ema, up_subitizing_ema, up_shadow_final_ema = ema_model(ema_inputs)
+            # with torch.no_grad():
+            #     up_edge_ema, up_shadow_ema, up_subitizing_ema, up_shadow_final_ema = ema_model(ema_inputs)
 
-            print("output sizes m8")
-            print(up_edge[0].size())
-            print(up_edge_ema[0].size())
-            print("the outputs")
+            # print("output sizes m8")
+            # print(up_edge[0].size())
+            # print(up_edge_ema[0].size())
+            # print("the outputs")
 
             ## calculate the loss
             ## subitizing loss
             subitizing_loss = losses.sigmoid_mse_loss(up_subitizing[:labeled_bs], number_per_batch[:labeled_bs])
-            subitizing_con_loss = losses.sigmoid_mse_loss(up_subitizing[labeled_bs:], up_subitizing_ema[labeled_bs:])
+            # subitizing_con_loss = losses.sigmoid_mse_loss(up_subitizing[labeled_bs:], up_subitizing_ema[labeled_bs:])
             ## edge loss
             edge_loss = []
             edge_con_loss = []
-            for (ix, ix_ema) in zip(up_edge, up_edge_ema):
-                print(ix.size())
-                print(edge_batch.size())
-                print(labeled_bs)
+            # for (ix, ix_ema) in zip(up_edge, up_edge_ema):
+            for ix in up_edge:
+                # print(ix.size())
+                # print(edge_batch.size())
+                # print(labeled_bs)
                 edge_loss.append(losses.bce2d_new(ix[:labeled_bs], edge_batch[:labeled_bs], reduction='mean'))
-                edge_con_loss.append(consistency_criterion(ix[labeled_bs:], ix_ema[labeled_bs:]))
+                # edge_con_loss.append(consistency_criterion(ix[labeled_bs:], ix_ema[labeled_bs:]))
             edge_loss = sum(edge_loss)
             edge_con_loss = sum(edge_con_loss)
             shadow_loss1 = []
             shadow_loss2 = []
             shadow_con_loss1 = []
             shadow_con_loss2 = []
-            for (ix, ix_ema) in zip(up_shadow, up_shadow_ema):
-                print(len)
+            # for (ix, ix_ema) in zip(up_shadow, up_shadow_ema):
+            for ix in up_shadow:
                 shadow_loss1.append(F.binary_cross_entropy_with_logits(ix[:labeled_bs], label_batch[:labeled_bs], reduction='mean'))
-                shadow_con_loss1.append(consistency_criterion(ix[labeled_bs:], ix_ema[labeled_bs:]))
+                # shadow_con_loss1.append(consistency_criterion(ix[labeled_bs:], ix_ema[labeled_bs:]))
 
-            for (ix, ix_ema) in zip(up_shadow_final, up_shadow_final_ema):
+            # for (ix, ix_ema) in zip(up_shadow_final, up_shadow_final_ema):
+            for ix in up_shadow_final:
                 shadow_loss2.append(F.binary_cross_entropy_with_logits(ix[:labeled_bs], label_batch[:labeled_bs], reduction='mean'))
-                shadow_con_loss2.append(consistency_criterion(ix[labeled_bs:], ix_ema[labeled_bs:]))
+                # shadow_con_loss2.append(consistency_criterion(ix[labeled_bs:], ix_ema[labeled_bs:]))
 
             shadow_loss = sum(shadow_loss1) + sum(shadow_loss2)
             supervised_loss = shadow_loss + edge_loss * args.edge + subitizing_loss*args.subitizing
 
-            consistency_weight = get_current_consistency_weight(epoch_num)
-            consistency_loss = consistency_weight * (edge_con_loss + sum(shadow_con_loss1) + sum(shadow_con_loss2) + subitizing_con_loss)
+            # consistency_weight = get_current_consistency_weight(epoch_num)
+            # consistency_loss = consistency_weight * (edge_con_loss + sum(shadow_con_loss1) + sum(shadow_con_loss2) + subitizing_con_loss)
+            #
+            # loss = supervised_loss + consistency_loss
 
-            loss = supervised_loss + consistency_loss
+            loss = supervised_loss
 
             optimizer.zero_grad()
             loss.backward()
@@ -237,42 +251,60 @@ if __name__ == "__main__":
             # loss_all_record.update(loss.item(), batch_size)
             shadow_loss2_record.update(shadow_loss2[-1].item(), labeled_bs)
             edge_loss_record.update(edge_loss.item(), labeled_bs)
-            shadow_con_loss2_record.update(shadow_con_loss2[-1].item(), batch_size-labeled_bs)
-            edge_con_loss_record.update(edge_con_loss.item(), batch_size-labeled_bs)
+            # shadow_con_loss2_record.update(shadow_con_loss2[-1].item(), batch_size-labeled_bs)
+            # edge_con_loss_record.update(edge_con_loss.item(), batch_size-labeled_bs)
             subitizing_loss_record.update(subitizing_loss, labeled_bs)
-
+            consistency_weight = -1
             logging.info('iteration %d : shadow_f : %f5 , edge: %f5 , subitizing: %f5, shadow_f_con: %f5  edge_con: %f5 loss_weight: %f5, lr: %f5' %
                          (iter_num, shadow_loss2_record.avg, edge_loss_record.avg, subitizing_loss_record.avg, shadow_con_loss2_record.avg,edge_con_loss_record.avg, consistency_weight, optimizer.param_groups[1]['lr']))
             loss_record = 'iteration %d : shadow_f : %f5 , edge: %f5 , shadow_f_con: %f5  edge_con: %f5 loss_weight: %f5, lr: %f5' % \
                           (iter_num, shadow_loss2_record.avg, edge_loss_record.avg, shadow_con_loss2_record.avg,edge_con_loss_record.avg, consistency_weight, optimizer.param_groups[1]['lr'])
 
+            if iter_num % 10 == 0:
+                csv_line = '%d,%f5,%f5,%f5,%f5,%f5,%f5' % \
+                           (iter_num, shadow_loss2_record.avg, edge_loss_record.avg, shadow_con_loss2_record.avg,
+                            edge_con_loss_record.avg, consistency_weight, optimizer.param_groups[1]['lr'])
+
+                with open('record/loss_rate_MTMT.txt', 'a+') as f:
+                    f.write(str(csv_line) + '\r\n')
+            if iter_num % 100 == 0:
+                snapshot_path = "C:/Users/idvin/Documents/computerVision/ShadowPrediction/models"
+                save_mode_path = os.path.join("D:/computerVisionModels/ISTD",
+                                              'ISTD_iter_' + str(iter_num) + '.pth')
+                # save_mode_path_ema = os.path.join(snapshot_path, 'iter_' + str(max_iterations) + '_ema.pth')
+                torch.save(model.state_dict(), save_mode_path)
+
             if iter_num % 200 == 0:
                 vutils.save_image(torch.sigmoid(up_shadow_final[-1].data), tmp_path + '/iter%d-d_predict_f.jpg' % iter_num, normalize=True,
                                   padding=0)
-                vutils.save_image(torch.sigmoid(up_shadow_final_ema[-1].data),
-                                  tmp_path + '/iter%d-e_predict_f.jpg' % iter_num, normalize=True,
-                                  padding=0)
+                # vutils.save_image(torch.sigmoid(up_shadow_final_ema[-1].data),
+                #                   tmp_path + '/iter%d-e_predict_f.jpg' % iter_num, normalize=True,
+                #                   padding=0)
                 vutils.save_image(torch.sigmoid(up_shadow[-1].data), tmp_path + '/iter%d-c_predict.jpg' % iter_num,
                                   normalize=True,
                                   padding=0)
                 vutils.save_image(torch.sigmoid(up_edge[-1].data), tmp_path + '/iter%d-g_edge.jpg' % iter_num,
                                   normalize=True, padding=0)
-                vutils.save_image(torch.sigmoid(up_edge_ema[-1].data), tmp_path + '/iter%d-h_edge.jpg' % iter_num,
-                                  normalize=True, padding=0)
+                # vutils.save_image(torch.sigmoid(up_edge_ema[-1].data), tmp_path + '/iter%d-h_edge.jpg' % iter_num,
+                #                   normalize=True, padding=0)
                 vutils.save_image(image_batch.data, tmp_path + '/iter%d-a_shadow-data.jpg' % iter_num, padding=0)
                 vutils.save_image(label_batch.data, tmp_path + '/iter%d-b_shadow-target.jpg' % iter_num, padding=0)
                 vutils.save_image(edge_batch.data, tmp_path + '/iter%d-f_edge-target.jpg' % iter_num, padding=0)
+
+                with open('record/loss_record_MTMT.txt', 'a') as f:
+                    f.write(str(loss_record) + '\r\n')
             if iter_num >= max_iterations:
                 break
             time1 = time.time()
         if iter_num >= max_iterations:
             break
-    save_mode_path = os.path.join(snapshot_path, 'iter_'+str(max_iterations)+'.pth')
+    snapshot_path = "C:/Users/idvin/Documents/computerVision/ShadowPrediction/models"
+    save_mode_path = os.path.join("D:/computerVisionModels/ISTD", 'ISTD_iter_'+str(max_iterations)+'.pth')
     # save_mode_path_ema = os.path.join(snapshot_path, 'iter_' + str(max_iterations) + '_ema.pth')
     torch.save(model.state_dict(), save_mode_path)
     # torch.save(ema_model.state_dict(), save_mode_path_ema)
     logging.info("save model to {}".format(save_mode_path))
-    writer.close()
+    # writer.close()
     with open('record/loss_record_MTMT.txt', 'a') as f:
         f.write(snapshot_path+' ')
         f.write(str(loss_record)+'\r\n')

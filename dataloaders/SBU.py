@@ -11,29 +11,55 @@ from utils.util import cal_subitizing
 
 NO_LABEL = -1
 
+# def make_union_dataset(root, edge=False):
+#     print(root)
+#     img_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages')) if f.endswith('.jpg')]
+#     label_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowMasks')) if f.endswith('.png')]
+#     data_list = []
+#     if edge:
+#         edge_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'SBUTrain4KRecoveredSmall\EdgeMasks')) if f.endswith('.png')]
+#         for img_name in img_list:
+#             if img_name in label_list:  # filter labeled data by seg label
+#             # if img_name in edge_list: # filter labeled data by edge label
+#                 data_list.append((os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages', img_name + '.jpg'),
+#                                   os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowMasks', img_name + '.png'),
+#                                  os.path.join(root, 'SBUTrain4KRecoveredSmall\EdgeMasks', img_name + '.png')))
+#             else: # we set label=-1 when comes to unlebaled data
+#                 data_list.append((os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages', img_name + '.jpg'), -1, -1))
+#     else:
+#         for img_name in img_list:
+#             if img_name in label_list:  # filter labeled data by seg label
+#             # if img_name in edge_list:  # filter labeled data by edge label
+#                 data_list.append((os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages', img_name + '.jpg'),
+#                                   os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowMasks', img_name + '.png')))
+#             else:  # we set label=-1 when comes to unlebaled data
+#                 data_list.append((os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages', img_name + '.jpg'), -1))
+#
+#     return data_list
+
 def make_union_dataset(root, edge=False):
     print(root)
-    img_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages')) if f.endswith('.jpg')]
-    label_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowMasks')) if f.endswith('.png')]
+    img_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'ShadowImages')) if f.endswith('.jpg')]
+    label_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'ShadowMasks')) if f.endswith('.png')]
     data_list = []
     if edge:
-        edge_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'SBUTrain4KRecoveredSmall\EdgeMasks')) if f.endswith('.png')]
+        edge_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root, 'EdgeMasks')) if f.endswith('.png')]
         for img_name in img_list:
             if img_name in label_list:  # filter labeled data by seg label
             # if img_name in edge_list: # filter labeled data by edge label
-                data_list.append((os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages', img_name + '.jpg'),
-                                  os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowMasks', img_name + '.png'),
-                                 os.path.join(root, 'SBUTrain4KRecoveredSmall\EdgeMasks', img_name + '.png')))
+                data_list.append((os.path.join(root, 'ShadowImages', img_name + '.jpg'),
+                                  os.path.join(root, 'ShadowMasks', img_name + '.png'),
+                                 os.path.join(root, 'EdgeMasks', img_name + '.png')))
             else: # we set label=-1 when comes to unlebaled data
-                data_list.append((os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages', img_name + '.jpg'), -1, -1))
+                data_list.append((os.path.join(root, 'ShadowImages', img_name + '.jpg'), -1, -1))
     else:
         for img_name in img_list:
             if img_name in label_list:  # filter labeled data by seg label
             # if img_name in edge_list:  # filter labeled data by edge label
-                data_list.append((os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages', img_name + '.jpg'),
-                                  os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowMasks', img_name + '.png')))
+                data_list.append((os.path.join(root, 'ShadowImages', img_name + '.jpg'),
+                                  os.path.join(root, 'ShadowMasks', img_name + '.png')))
             else:  # we set label=-1 when comes to unlebaled data
-                data_list.append((os.path.join(root, 'SBUTrain4KRecoveredSmall\ShadowImages', img_name + '.jpg'), -1))
+                data_list.append((os.path.join(root, 'ShadowImages', img_name + '.jpg'), -1))
 
     return data_list
 
@@ -62,6 +88,7 @@ class SBU(data.Dataset):
         self.mod = mod
         if self.mod == 'union':
             self.imgs = make_union_dataset(root, edge)
+            print(self.imgs)
         else:
             self.imgs = make_labeled_dataset(root, edge)
         self.joint_transform = joint_transform
