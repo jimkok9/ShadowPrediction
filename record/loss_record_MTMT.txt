@@ -1,0 +1,110 @@
+C:/Users/idvin/Documents/computerVision/ShadowPrediction/models 0
+C:/Users/idvin/Documents/computerVision/ShadowPrediction/models 0
+C:/Users/idvin/Documents/computerVision/ShadowPrediction/models 0
+C:/Users/idvin/Documents/computerVision/ShadowPrediction/models 0
+C:/Users/idvin/Documents/computerVision/ShadowPrediction/models 0
+C:/Users/idvin/Documents/computerVision/ShadowPrediction/models 0
+C:/Users/idvin/Documents/computerVision/ShadowPrediction/models 0
+C:/Users/idvin/Documents/computerVision/ShadowPrediction/models 0
+iteration 200 : shadow_f : 0.6798975 , edge: 0.0085355 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0049105
+iteration 400 : shadow_f : 0.6615855 , edge: 0.0085765 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0048205
+iteration 600 : shadow_f : 0.6545805 , edge: 0.0084155 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0047305
+iteration 800 : shadow_f : 0.6322005 , edge: 0.0082095 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0046395
+iteration 1000 : shadow_f : 0.6345305 , edge: 0.0077135 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0045485
+iteration 1200 : shadow_f : 0.6330965 , edge: 0.0076105 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0044575
+iteration 1400 : shadow_f : 0.6323145 , edge: 0.0077405 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0043665
+iteration 1600 : shadow_f : 0.6278285 , edge: 0.0075395 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0042745
+iteration 1800 : shadow_f : 0.6284555 , edge: 0.0074125 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0041835
+iteration 2000 : shadow_f : 0.6211465 , edge: 0.0096085 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0040915
+iteration 2200 : shadow_f : 0.6277275 , edge: 0.0073175 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0039995
+iteration 2400 : shadow_f : 0.6281655 , edge: 0.0073795 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0039065
+iteration 2600 : shadow_f : 0.6285325 , edge: 0.0073975 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0038145
+iteration 2800 : shadow_f : 0.6230335 , edge: 0.0074165 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0037215
+iteration 3000 : shadow_f : 0.6257615 , edge: 0.0072975 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0036285
+iteration 3200 : shadow_f : 0.6250305 , edge: 0.0072635 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0035345
+iteration 3400 : shadow_f : 0.6292685 , edge: 0.0075075 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0034405
+iteration 3600 : shadow_f : 0.6261395 , edge: 0.0073395 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0033475
+iteration 3800 : shadow_f : 0.6245215 , edge: 0.0073155 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0032525
+iteration 4000 : shadow_f : 0.6444135 , edge: 0.0059525 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0031585
+iteration 4200 : shadow_f : 0.6249235 , edge: 0.0072865 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0030635
+iteration 4400 : shadow_f : 0.6242665 , edge: 0.0073165 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0029685
+iteration 4600 : shadow_f : 0.6235055 , edge: 0.0072975 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0028725
+iteration 4800 : shadow_f : 0.6208955 , edge: 0.0073925 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0027765
+iteration 5000 : shadow_f : 0.6218345 , edge: 0.0074135 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0026805
+iteration 5200 : shadow_f : 0.6231325 , edge: 0.0074395 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0025835
+iteration 5400 : shadow_f : 0.6259685 , edge: 0.0072335 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0024865
+iteration 5600 : shadow_f : 0.6227825 , edge: 0.0071325 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0023895
+iteration 5800 : shadow_f : 0.6228985 , edge: 0.0071955 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0022915
+iteration 6000 : shadow_f : 0.6187625 , edge: 0.0063025 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0021925
+iteration 6200 : shadow_f : 0.6228165 , edge: 0.0069475 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0020945
+iteration 6400 : shadow_f : 0.6249245 , edge: 0.0070995 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0019945
+iteration 6600 : shadow_f : 0.6228835 , edge: 0.0072075 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0018945
+iteration 6800 : shadow_f : 0.6236425 , edge: 0.0074075 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0017945
+iteration 7000 : shadow_f : 0.6243995 , edge: 0.0071145 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0016925
+iteration 7200 : shadow_f : 0.6236155 , edge: 0.0072585 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0015915
+iteration 7400 : shadow_f : 0.6181145 , edge: 0.0070315 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0014885
+iteration 7600 : shadow_f : 0.6234005 , edge: 0.0069805 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0013855
+iteration 7800 : shadow_f : 0.6230125 , edge: 0.0072055 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0012805
+iteration 8000 : shadow_f : 0.6268015 , edge: 0.0058555 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0011755
+iteration 8200 : shadow_f : 0.6224725 , edge: 0.0072675 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0010695
+iteration 8400 : shadow_f : 0.6225755 , edge: 0.0072805 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0009615
+iteration 8600 : shadow_f : 0.6227515 , edge: 0.0072565 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0008535
+iteration 8800 : shadow_f : 0.6237505 , edge: 0.0073945 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0007425
+iteration 9000 : shadow_f : 0.6230715 , edge: 0.0072195 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0006305
+iteration 9200 : shadow_f : 0.6230805 , edge: 0.0071965 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0005165
+iteration 9400 : shadow_f : 0.6195155 , edge: 0.0072245 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0003985
+iteration 9600 : shadow_f : 0.6223035 , edge: 0.0071065 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0002775
+iteration 9800 : shadow_f : 0.6239075 , edge: 0.0071405 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0001495
+iteration 10000 : shadow_f : 0.6278145 , edge: 0.0071795 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0000015
+C:/Users/idvin/Documents/computerVision/ShadowPrediction/models iteration 10000 : shadow_f : 0.6278145 , edge: 0.0071795 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0000015
+iteration 200 : shadow_f : 0.6962495 , edge: 0.0121855 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0049105
+iteration 400 : shadow_f : 0.6839915 , edge: 0.0118675 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0048205
+iteration 600 : shadow_f : 0.6756525 , edge: 0.0115805 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0047305
+iteration 800 : shadow_f : 0.6724135 , edge: 0.0115305 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0046395
+iteration 1000 : shadow_f : 0.6704375 , edge: 0.0115165 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0045485
+iteration 1200 : shadow_f : 0.6690765 , edge: 0.0114205 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0044575
+iteration 1400 : shadow_f : 0.6677395 , edge: 0.0113205 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0043665
+iteration 1600 : shadow_f : 0.6664445 , edge: 0.0112075 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0042745
+iteration 1800 : shadow_f : 0.6653475 , edge: 0.0111205 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0041835
+iteration 2000 : shadow_f : 0.6645165 , edge: 0.0109765 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0040915
+iteration 2200 : shadow_f : 0.6540695 , edge: 0.0102755 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0039995
+iteration 2400 : shadow_f : 0.6529425 , edge: 0.0103145 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0039065
+iteration 2600 : shadow_f : 0.6536825 , edge: 0.0099325 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0038145
+iteration 2800 : shadow_f : 0.6521725 , edge: 0.0100625 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0037215
+iteration 3000 : shadow_f : 0.6521965 , edge: 0.0100765 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0036285
+iteration 3200 : shadow_f : 0.6528765 , edge: 0.0100365 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0035345
+iteration 3400 : shadow_f : 0.6530405 , edge: 0.0100325 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0034405
+iteration 3600 : shadow_f : 0.6531025 , edge: 0.0100595 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0033475
+iteration 3800 : shadow_f : 0.6527915 , edge: 0.0100875 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0032525
+iteration 4000 : shadow_f : 0.6526775 , edge: 0.0100785 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0031585
+iteration 4200 : shadow_f : 0.6461355 , edge: 0.0100075 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0030635
+iteration 4400 : shadow_f : 0.6475755 , edge: 0.0101085 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0029685
+iteration 4600 : shadow_f : 0.6475845 , edge: 0.0100645 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0028725
+iteration 4800 : shadow_f : 0.6478315 , edge: 0.0099585 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0027765
+iteration 5000 : shadow_f : 0.6486375 , edge: 0.0099575 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0026805
+iteration 5200 : shadow_f : 0.6492135 , edge: 0.0099425 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0025835
+iteration 5400 : shadow_f : 0.6495725 , edge: 0.0099845 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0024865
+iteration 5600 : shadow_f : 0.6498155 , edge: 0.0100075 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0023895
+iteration 5800 : shadow_f : 0.6499455 , edge: 0.0099545 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0022915
+iteration 6000 : shadow_f : 0.6498625 , edge: 0.0099745 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0021925
+iteration 6200 : shadow_f : 0.6421905 , edge: 0.0092345 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0020945
+iteration 6400 : shadow_f : 0.6451895 , edge: 0.0096475 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0019945
+iteration 6600 : shadow_f : 0.6457715 , edge: 0.0098575 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0018945
+iteration 6800 : shadow_f : 0.6463275 , edge: 0.0097425 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0017945
+iteration 7000 : shadow_f : 0.6466315 , edge: 0.0096335 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0016925
+iteration 7200 : shadow_f : 0.6471645 , edge: 0.0097455 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0015915
+iteration 7400 : shadow_f : 0.6473025 , edge: 0.0097885 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0014885
+iteration 7600 : shadow_f : 0.6471435 , edge: 0.0098395 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0013855
+iteration 7800 : shadow_f : 0.6468675 , edge: 0.0099475 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0012805
+iteration 8000 : shadow_f : 0.6468355 , edge: 0.0098775 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0011755
+iteration 8200 : shadow_f : 0.6310815 , edge: 0.0097925 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0010695
+iteration 8400 : shadow_f : 0.6439365 , edge: 0.0099085 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0009615
+iteration 8600 : shadow_f : 0.6437055 , edge: 0.0100685 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0008535
+iteration 8800 : shadow_f : 0.6436635 , edge: 0.0101305 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0007425
+iteration 9000 : shadow_f : 0.6442925 , edge: 0.0099105 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0006305
+iteration 9200 : shadow_f : 0.6443905 , edge: 0.0098295 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0005165
+iteration 9400 : shadow_f : 0.6441985 , edge: 0.0097855 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0003985
+iteration 9600 : shadow_f : 0.6440255 , edge: 0.0098755 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0002775
+iteration 9800 : shadow_f : 0.6446095 , edge: 0.0098795 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0001495
+iteration 10000 : shadow_f : 0.6445465 , edge: 0.0098795 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0000015
+C:/Users/idvin/Documents/computerVision/ShadowPrediction/models iteration 10000 : shadow_f : 0.6445465 , edge: 0.0098795 , shadow_f_con: 0.0000005  edge_con: 0.0000005 loss_weight: -1.0000005, lr: 0.0000015
