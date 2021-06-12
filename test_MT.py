@@ -8,11 +8,11 @@ from main import MTMT
 # from networks.EGNet_task3 import build_model
 
 parser = argparse.ArgumentParser()
-# parser.add_argument('--root_path', type=str, default='/home/ext/chenzhihao/Datasets/ISTD_USR/test', help='Name of Experiment')
-# parser.add_argument('--root_path', type=str, default='/home/ext/chenzhihao/Datasets/UCF', help='Name of Experiment')
-# parser.add_argument('--root_path', type=str, default='/home/ext/chenzhihao/Datasets/SBU-shadow/SBU-Test_rename', help='Name of Experiment')
-parser.add_argument('--root_path', type=str, default='C:/Users/idvin/Documents/computerVision/ShadowPrediction/SBU-shadow/SBU-Test', help='Name of Experiment')
-parser.add_argument('--target_path', type=str, default='C:/Users/idvin/Documents/computerVision/ShadowPrediction/SBU-shadow/SBU-Test', help='Name of Experiment')
+parser.add_argument('--root_path', type=str, default='D:/ISTD_Dataset/test', help='Name of Experiment')
+#parser.add_argument('--root_path', type=str, default='/home/ext/chenzhihao/Datasets/UCF', help='Name of Experiment')
+# parser.add_argument('--root_path', type=str, default='', help='Name of Experiment')
+# parser.add_argument('--root_path', type=str, default='D:/SBU-shadow/SBU-Test', help='Name of Experiment')
+# parser.add_argument('--target_path', type=str, default='C:/Users/idvin/Documents/computerVision/ShadowPrediction/SBU-shadow/SBU-Test', help='Name of Experiment')
 parser.add_argument('--model', type=str,  default='EGNet', help='model_name')
 parser.add_argument('--gpu', type=str,  default='0', help='GPU to use')
 parser.add_argument('--base_lr', type=float,  default=0.005, help='base learning rate')
@@ -41,21 +41,24 @@ os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.gpu
 # snapshot_path = '../model_SBU_EGNet/baselineC64_DSS/10.00.005/iter_7000.pth' # multi-tasks
 # test_save_path = '../model_SBU_EGNet_ablation/multi-task/prediction'
 # snapshot_path = 'D:/computerVisionModels/UCF_iter_5000.pth'
-snapshot_path = 'C:/Users/idvin/Documents/computerVision/ShadowPrediction/models/iter_10000.pth'
+snapshot_path = 'D:/computerVisionModels/ISTD_Jim/ISTD_iter_10000.pth'
 # snapshot_path = "../model_ISTD_EGNet/salience/iter_3000.pth"
-test_save_path = 'C:/Users/idvin/Documents/computerVision/ShadowPrediction/test/'
+# test_save_path = 'C:/Users/idvin/Documents/computerVision/ShadowPrediction/test/'
+test_save_path = 'D:/ComputerVisionTests/ISTD'
 # test_save_path = 'C:/Users/idvin/Documents/computerVision/ShadowPrediction/testUCF/'
 if not os.path.exists(test_save_path):
     os.makedirs(test_save_path)
 print(snapshot_path)
 num_classes = 1
 
-datafolder = "C:/Users/idvin/Documents/computerVision/ShadowPrediction/SBU-shadow/SBU-Test/ShadowImages"
+datafolder = FLAGS.root_path + "/ShadowImages"
 # datafolder = "C:/Users/idvin/Documents/computerVision/ShadowPrediction/SBU-shadow/SBU-Test/ShadowImages"
 
 img_list = os.listdir(datafolder)
+print("here!!!!")
+print(len(img_list))
 print(img_list)
-img_list = [x[:-4] for x in img_list if '.jpg' in x]
+# img_list = [x[:-4] for x in img_list if '.jpg' in x]
 # data_path = [(os.path.join(FLAGS.root_path, 'ShadowImages', img_name + '.jpg'),
 #              os.path.join(FLAGS.root_path, 'ShadowMasks', img_name + '.png'))
 #             for img_name in img_list]
@@ -65,6 +68,7 @@ img_list = [x[:-4] for x in img_list if '.jpg' in x]
 data_path = [(FLAGS.root_path + '/ShadowImages/' + img_name + ".jpg",
              FLAGS.root_path + '/ShadowMasks/' + img_name + ".png")
             for img_name in img_list]
+print("paths")
 print(data_path)
 
 def test_calculate_metric():
@@ -78,6 +82,18 @@ def test_calculate_metric():
     print(avg_metric)
 
     return avg_metric
+#
+# def test_calculate_metric(net, data_path, num_classes, test_save_path, trans_scale=FlAGS.scale):
+#     net = MTMT().cuda()
+#     net.load_state_dict(torch.load(snapshot_path))
+#     print("init weight from {}".format(snapshot_path))
+#     net.eval()
+#
+#     avg_metric = test_all_case(net, data_path, num_classes=num_classes,
+#                                save_result=True, test_save_path=test_save_path, trans_scale=FLAGS.scale)
+#     print(avg_metric)
+#
+#     return avg_metric
 
 
 if __name__ == '__main__':

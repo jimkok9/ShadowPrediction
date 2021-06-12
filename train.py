@@ -24,9 +24,9 @@ from dataloaders.SBU import SBU, relabel_dataset
 from dataloaders import joint_transforms
 
 parser = argparse.ArgumentParser()
-#rootPath = 'C:/Users\idvin\Documents\computerVision\ShadowPrediction\SBU-shadow'
+rootPath = 'C:/Users/idvin/Documents/computerVision/ShadowPrediction/SBU-shadow/SBUTrain4KRecoveredSmall'
 #rootPath = 'C:/Users/idvin/Documents/computerVision/ShadowPrediction/UCF'
-rootPath = 'D:/ISTD_Dataset/train'
+# rootPath = 'D:/ISTD_Dataset/train'
 parser.add_argument('--root_path', type=str, default=rootPath, help='Name of Experiment')
 parser.add_argument('--exp', type=str,  default='MTMT', help='model_name')
 parser.add_argument('--max_iterations', type=int,  default=10000, help='maximum epoch number to train')
@@ -269,8 +269,8 @@ if __name__ == "__main__":
                     f.write(str(csv_line) + '\r\n')
             if iter_num % 100 == 0:
                 snapshot_path = "C:/Users/idvin/Documents/computerVision/ShadowPrediction/models"
-                save_mode_path = os.path.join("D:/computerVisionModels/ISTD",
-                                              'ISTD_iter_' + str(iter_num) + '.pth')
+                save_mode_path = os.path.join("D:/computerVisionModels/SBU2",
+                                              'SBU_iter_' + str(iter_num) + '.pth')
                 # save_mode_path_ema = os.path.join(snapshot_path, 'iter_' + str(max_iterations) + '_ema.pth')
                 torch.save(model.state_dict(), save_mode_path)
 
@@ -299,7 +299,7 @@ if __name__ == "__main__":
         if iter_num >= max_iterations:
             break
     snapshot_path = "C:/Users/idvin/Documents/computerVision/ShadowPrediction/models"
-    save_mode_path = os.path.join("D:/computerVisionModels/ISTD", 'ISTD_iter_'+str(max_iterations)+'.pth')
+    save_mode_path = os.path.join("D:/computerVisionModels/SBU2", 'SBU_iter_'+str(max_iterations)+'.pth')
     # save_mode_path_ema = os.path.join(snapshot_path, 'iter_' + str(max_iterations) + '_ema.pth')
     torch.save(model.state_dict(), save_mode_path)
     # torch.save(ema_model.state_dict(), save_mode_path_ema)

@@ -55,13 +55,13 @@ class EFtoDF(nn.Module):
         # self.shadow_score = nn.Conv2d(list_k[0][2], 1, 3, 1, 1)
         self.shadow_score = nn.Sequential(
             nn.Conv2d(list_k[1][2], list_k[1][2] // 4, 3, 1, 1), nn.BatchNorm2d(list_k[1][2] // 4),
-            nn.ReLU(inplace=True),
+            nn.Sigmoid(),
             nn.Dropout(0.1), nn.Conv2d(list_k[1][2] // 4, 1, 1)
         )
         # self.edge_score = nn.Conv2d(list_k[0][2], 1, 3, 1, 1)
         self.edge_score = nn.Sequential(
             nn.Conv2d(list_k[0][2], list_k[0][2] // 4, 3, 1, 1), nn.BatchNorm2d(list_k[0][2] // 4),
-            nn.ReLU(inplace=True),
+            nn.Sigmoid(),
             nn.Dropout(0.1), nn.Conv2d(list_k[0][2] // 4, 1, 1)
         )
 
@@ -146,7 +146,7 @@ class DFtoRF(nn.Module):
         self.up = nn.ModuleList(tmp_up)
 
         self.sub_score = nn.Sequential(
-            nn.Conv2d(list_k[0][0], list_k[0][0] // 4, 3, 1, 1), nn.BatchNorm2d(list_k[0][0] // 4), nn.ReLU(inplace=True),
+            nn.Conv2d(list_k[0][0], list_k[0][0] // 4, 3, 1, 1), nn.BatchNorm2d(list_k[0][0] // 4), nn.Sigmoid(),
             nn.Dropout(0.1), nn.Conv2d(list_k[0][0] // 4, 1, 1)
         )
 
@@ -185,6 +185,7 @@ class DFtoRF(nn.Module):
 
         return up_score
 
+
 class RFtoPred(nn.Module):
     def __init__(self):
         super(RFtoPred, self).__init__()
@@ -192,7 +193,8 @@ class RFtoPred(nn.Module):
 
         for i in range(0, 5):
             predictions.append(nn.Sequential(
-                nn.Conv2d(32, 64, 3, 1, 1), nn.Conv2d(64, 64, 3, 1, 1), nn.Conv2d(64, 16, 3, 1, 1), nn.Conv2d(16, 1, 1), nn.Sigmoid()
+                nn.Conv2d(32, 64, 3, 1, 1), nn.Conv2d(64, 64, 3, 1, 1), nn.Conv2d(64, 16, 3, 1, 1), nn.Conv2d(16, 1, 1),
+                nn.Sigmoid()
             ))
 
         self.predictions = nn.ModuleList(predictions)
@@ -212,9 +214,9 @@ class MTMT(nn.ModuleList):
         self.resNext = ResNeXt101()
         self.convert = ConvertResNext()
         self.EFtoDF = EFtoDF()
-        self.DFtoPred = DFtoPred()
+        # self.DFtoPred = DFtoPred()
         self.DFtoRF = DFtoRF()
-        self.RFtoPred = RFtoPred()
+        # self.RFtoPred = RFtoPred()
 
     def forward(self, img):
         # img = ToTensor()(img).unsqueeze(0)
