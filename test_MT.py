@@ -58,10 +58,10 @@ img_list = os.listdir(datafolder)
 print("here!!!!")
 print(len(img_list))
 print(img_list)
-# img_list = [x[:-4] for x in img_list if '.jpg' in x]
-# data_path = [(os.path.join(FLAGS.root_path, 'ShadowImages', img_name + '.jpg'),
-#              os.path.join(FLAGS.root_path, 'ShadowMasks', img_name + '.png'))
-#             for img_name in img_list]
+img_list = [x[:-4] for x in img_list if '.jpg' in x]
+data_path = [(os.path.join(FLAGS.root_path, 'ShadowImages', img_name + '.jpg'),
+             os.path.join(FLAGS.root_path, 'ShadowMasks', img_name + '.png'))
+            for img_name in img_list]
 
 
 # target_path = "C:\Users\idvin\Documents\computerVision\ShadowPrediction\test"
@@ -78,23 +78,30 @@ def test_calculate_metric():
     net.eval()
 
     avg_metric = test_all_case(net, data_path, num_classes=num_classes,
-                               save_result=True, test_save_path=test_save_path, trans_scale=FLAGS.scale)
+                               save_result=True, test_save_path=test_save_path, trans_scale=416)
     print(avg_metric)
 
     return avg_metric
-#
-# def test_calculate_metric(net, data_path, num_classes, test_save_path, trans_scale=FlAGS.scale):
-#     net = MTMT().cuda()
-#     net.load_state_dict(torch.load(snapshot_path))
-#     print("init weight from {}".format(snapshot_path))
-#     net.eval()
-#
-#     avg_metric = test_all_case(net, data_path, num_classes=num_classes,
-#                                save_result=True, test_save_path=test_save_path, trans_scale=FLAGS.scale)
-#     print(avg_metric)
-#
-#     return avg_metric
 
+
+def test_calculate_metric(snapshot_path,data_path,test_save_path):
+    datafolder = data_path + "/ShadowImages"
+    img_list = os.listdir(datafolder)
+    img_list = [x[:-4] for x in img_list if '.jpg' in x]
+
+    data_path = [(data_path + '/ShadowImages/' + img_name + ".jpg",
+                  data_path + '/ShadowMasks/' + img_name + ".png")
+                 for img_name in img_list]
+    net = MTMT().cuda()
+    net.load_state_dict(torch.load(snapshot_path))
+    print("init weight from {}".format(snapshot_path))
+    net.eval()
+
+    avg_metric = test_all_case(net, data_path,
+                               save_result=False, test_save_path=test_save_path, trans_scale=FLAGS.scale)
+    print(avg_metric)
+    del net
+    return avg_metric
 
 if __name__ == '__main__':
     metric = test_calculate_metric()

@@ -26,6 +26,8 @@ def test_all_case(net, image_list, num_classes=1, save_result=True, test_save_pa
     Jaccard = 0
     ber_mean = 0
     iter = 0
+    ber_shadow = 0
+    ber_unshadow = 0
     for (img_path, target_path) in tqdm(image_list):
         img_name = img_path.split('/')[-1]
         img = Image.open(img_path).convert('RGB')
@@ -78,7 +80,7 @@ def test_all_case(net, image_list, num_classes=1, save_result=True, test_save_pa
         '''
         if save_result:
             Image.fromarray(prediction).save(os.path.join(test_save_path, img_name[:-4]+'.png'), "PNG")
-
+    Jaccard = str(ber_mean) + "," + str(ber_shadow) + "," + str(ber_unshadow)
     return Jaccard
 
 def cal_acc(prediction, label, thr = 128):
