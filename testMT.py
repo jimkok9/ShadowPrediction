@@ -3,9 +3,9 @@ import torch
 from network import MTMT
 from test_MT_util import test_all_case
 
-root_path = 'C:/Users/Jim Kok/Desktop/SBU-shadow/SBUTrain4KRecoveredSmall'
-snapshot_path = 'models/SBU10000Final.pth'
-test_save_path = 'C:/Users/Jim Kok/Desktop/save/prediction'
+root_path = 'C:/Users/Jim Kok/Desktop/ISTD_Dataset/test'
+snapshot_path = 'models/ISTD10000.pth'
+test_save_path = 'C:/Users/Jim Kok/Desktop/save/prediction3'
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 scale = 416
@@ -13,8 +13,8 @@ if not os.path.exists(test_save_path):
     os.makedirs(test_save_path)
 num_classes = 2
 
-img_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root_path, 'ShadowImages')) if f.endswith('.jpg')]
-data_path = [(os.path.join(root_path, 'ShadowImages', img_name + '.jpg'),
+img_list = [os.path.splitext(f)[0] for f in os.listdir(os.path.join(root_path, 'ShadowImages')) if f.endswith('.png')]
+data_path = [(os.path.join(root_path, 'ShadowImages', img_name + '.png'),
              os.path.join(root_path, 'ShadowMasks', img_name + '.png'))
             for img_name in img_list]
 

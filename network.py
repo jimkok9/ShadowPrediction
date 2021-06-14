@@ -15,6 +15,7 @@ class ConvertResNext(nn.Module):
                                      nn.BatchNorm2d(output_channel_size[i]), nn.ReLU(inplace=True)))
         self.convert = nn.ModuleList(convertLayers)
 
+
     def forward(self, outputResNext):
         EF = []
         for i in range(len(outputResNext)):

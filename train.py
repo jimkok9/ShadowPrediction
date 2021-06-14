@@ -14,7 +14,7 @@ from tqdm import tqdm
 from dataloaders.SBU import SBU, relabel_dataset
 from dataloaders import joint_transforms
 
-train_data_path = 'C:/Users/Jim Kok/Desktop/SBU-shadow/SBUTrain4KRecoveredSmall'
+train_data_path = 'C:/Users/Jim Kok/Desktop/ISTD_Dataset/train'
 scale = 416
 batch_size = 3
 max_iterations = 10000
@@ -44,6 +44,8 @@ if __name__ == "__main__":
 
     db_train = SBU(root=train_data_path, joint_transform=joint_transform, transform=transforms.ToTensor(), target_transform=target_transform, mod='union', edge=True)
     labeled_idxs, unlabeled_idxs = relabel_dataset(db_train, edge_able=True)
+    print(labeled_idxs)
+    print(unlabeled_idxs)
     batch_sampler = Utils.util.TwoStreamBatchSampler(labeled_idxs, unlabeled_idxs, batch_size, batch_size-labeled_bs)
 
 
@@ -117,22 +119,22 @@ if __name__ == "__main__":
                 ema_param.data.mul_(1-ema_decay).add_(param.data.mul(ema_decay))
 
             if iter_num % 100 == 0:
-                vutils.save_image(up_shadow_final[-1].data, 'record2/iter%d-d_predict_f.jpg' % iter_num, normalize=True,
+                vutils.save_image(up_shadow_final[-1].data, 'record3/iter%d-d_predict_f.jpg' % iter_num, normalize=True,
                                   padding=0)
-                vutils.save_image(up_shadow_final_ema[-1].data, 'record2/iter%d-e_predict_f.jpg' % iter_num, normalize=True,
+                vutils.save_image(up_shadow_final_ema[-1].data, 'record3/iter%d-e_predict_f.jpg' % iter_num, normalize=True,
                                   padding=0)
             if iter_num % 7000 == 0:
-                torch.save(model.state_dict(), "models/SBU7000Final.pth")
+                torch.save(model.state_dict(), "models/ISTD7000Final.pth")
             if iter_num % 7500 == 0:
-                torch.save(model.state_dict(), "models/SBU7500Final.pth")
+                torch.save(model.state_dict(), "models/ISTD7500Final.pth")
             if iter_num % 8000 == 0:
-                torch.save(model.state_dict(), "models/SBU8000Final.pth")
+                torch.save(model.state_dict(), "models/ISTD8000Final.pth")
             if iter_num % 8500 == 0:
-                torch.save(model.state_dict(), "models/SBU8500Final.pth")
+                torch.save(model.state_dict(), "models/ISTD8500Final.pth")
             if iter_num % 9000 == 0:
-                torch.save(model.state_dict(), "models/SBU9000Final.pth")
+                torch.save(model.state_dict(), "models/ISTD9000Final.pth")
             if iter_num % 9500 == 0:
-                torch.save(model.state_dict(), "models/SBU9500Final.pth")
+                torch.save(model.state_dict(), "models/ISTD9500Final.pth")
 
             iter_num = iter_num + 1
 
@@ -141,4 +143,4 @@ if __name__ == "__main__":
         if iter_num > max_iterations:
             break
 
-    torch.save(model.state_dict(), "models/SBU10000Final.pth")
+    torch.save(model.state_dict(), "models/ISTD10000.pth")
