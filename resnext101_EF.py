@@ -4,7 +4,7 @@ from torch import nn
 import resnext_101_32x4d
 import torch._utils
 
-resnext_101_32_path = "C:/Users/Jim Kok/Desktop/resnext_101_32x4d.pth"
+resnext_101_32_path = "C:/Users/idvin/Documents/computerVision/ShadowPrediction/resnext_101_32x4d.pth"
 
 class ResNeXt101(nn.Module):
     def __init__(self):
