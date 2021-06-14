@@ -22,13 +22,13 @@ if __name__ == "__main__":
     img_var = img_var * 255
 
     edge, shadows, SC, output = net(img_var)
-    #[pred0], shadows, SC, [RF_S_f]
+
     res = output[-1]
     print(res)
     to_pil = transforms.ToPILImage()
     prediction = np.array(to_pil(res.data.squeeze(0).cpu()))
     print(prediction)
-    prediction = np.uint8(prediction>=110)*255 # trick just for SBU
+    prediction = np.uint8(prediction>=127.5)*255
     print(prediction)
     prediction = crf_refine(np.array(img.convert('RGB').resize((416, 416))), prediction)
     prediction = np.array(transforms.Resize((h, w))(Image.fromarray(prediction.astype('uint8')).convert('L')))

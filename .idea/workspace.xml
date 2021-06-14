@@ -21,13 +21,14 @@
   <component name="ChangeListManager">
     <list default="true" id="6f704411-fb14-40fc-8342-d75a4d978027" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Utils/util.py" beforeDir="false" afterPath="$PROJECT_DIR$/Utils/util.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/network.py" beforeDir="false" afterPath="$PROJECT_DIR$/network.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/record/test.txt" beforeDir="false" afterPath="$PROJECT_DIR$/record/test.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testMT.py" beforeDir="false" afterPath="$PROJECT_DIR$/testMT.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_MT_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_MT_util.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MTMT.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/record/test.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/TestSingleImage.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_set/EdgeMasks/lssd1.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_set/EdgeMasks/lssd3.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_set/ShadowImages/lssd1.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_set/ShadowImages/lssd3.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_set/ShadowMasks/lssd3.png" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,7 +47,6 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/train.py" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/record/test.txt" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="ProjectId" id="1sP1Ph0lJV2BYeuc3sEgXKp8Hzl" />
   <component name="ProjectViewState">
@@ -75,6 +75,27 @@
     </key>
   </component>
   <component name="RunManager" selected="Python.train">
+    <configuration name="TestSingleImage" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="ShadowPrediction" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="C:\Users\Jim Kok\Desktop\ShadowPrediction\TestSingleImage.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="network" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -88,27 +109,6 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="" />
       <option name="SCRIPT_NAME" value="C:\Users\Jim Kok\Desktop\ShadowPrediction\network.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="test" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="ShadowPrediction" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -183,7 +183,7 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.train" />
-        <item itemvalue="Python.test" />
+        <item itemvalue="Python.TestSingleImage" />
         <item itemvalue="Python.testMT" />
         <item itemvalue="Python.testing" />
         <item itemvalue="Python.network" />
